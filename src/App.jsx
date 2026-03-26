@@ -45,7 +45,7 @@ const promptsByMode = {
 const starterMessages = (name = "") => [
   {
     role: "assistant",
-    text: `Hola ${name}. Soy SamurAI del pensamiento 🥷. Estoy aquí para ayudarte a pensar mejor. Para partir: ¿qué te cuesta más, hacer buenas preguntas o dar buenas respuestas?`,
+    text: `Hola ${name}. “Hola, soy el “SamurAI del pensamiento” y ayudante del profesor Alvaro. Estoy aquí para ayudarte a pensar mejor, hacer preguntas más profundas y desarrollar tu pensamiento filosófico. Para partir, dime: ¿cómo te llamas? ¿y qué te cuesta más: hacer buenas preguntas o dar buenas respuestas?”`,
   },
 ];
 
