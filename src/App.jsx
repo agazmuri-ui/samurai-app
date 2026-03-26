@@ -226,7 +226,7 @@ export default function App() {
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg,#fde68a,#f9a8d4,#a5f3fc)", padding: 24, fontFamily: "sans-serif" }}>
         <div style={{ ...cardStyle({ width: "100%", maxWidth: 420, textAlign: "center" }) }}>
           <div style={{ fontSize: 42, marginBottom: 8 }}>🥷</div>
-          <h1 style={{ margin: 0, fontSize: 28, lineHeight: 1.15 }}>SamurAI del pensamiento</h1>
+          <h1 style={{ margin: 0, fontSize: window.innerWidth < 500 ? 22 : 26, lineHeight: 1.2, textAlign: "center", wordBreak: "break-word" }}>SamurAI del pensamiento</h1>
           <p style={{ color: "#475569", lineHeight: 1.45, fontSize: 15, marginTop: 10 }}>Versión híbrida: IA para conversar, reglas para evaluar.</p>
           <input
             value={nameInput}
