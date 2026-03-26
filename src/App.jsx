@@ -225,18 +225,18 @@ export default function App() {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg,#fde68a,#f9a8d4,#a5f3fc)", padding: 24, fontFamily: "sans-serif" }}>
         <div style={{ ...cardStyle({ width: "100%", maxWidth: 420, textAlign: "center" }) }}>
-          <div style={{ fontSize: 56, marginBottom: 8 }}>🥷</div>
-          <h1 style={{ margin: 0 }}>SamurAI del pensamiento</h1>
-          <p style={{ color: "#475569", lineHeight: 1.5 }}>Versión híbrida: IA para conversar, reglas para evaluar.</p>
+          <div style={{ fontSize: 42, marginBottom: 8 }}>🥷</div>
+          <h1 style={{ margin: 0, fontSize: 28, lineHeight: 1.15 }}>SamurAI del pensamiento</h1>
+          <p style={{ color: "#475569", lineHeight: 1.45, fontSize: 15, marginTop: 10 }}>Versión híbrida: IA para conversar, reglas para evaluar.</p>
           <input
             value={nameInput}
             onChange={(e) => setNameInput(e.target.value)}
             placeholder="Escribe tu nombre..."
-            style={{ width: "100%", boxSizing: "border-box", padding: 14, borderRadius: 14, border: "1px solid #cbd5e1", marginTop: 12 }}
+            style={{ width: "100%", boxSizing: "border-box", padding: 12, borderRadius: 14, border: "1px solid #cbd5e1", marginTop: 12, fontSize: 15 }}
           />
           <button
             onClick={startApp}
-            style={{ marginTop: 12, width: "100%", padding: 14, borderRadius: 14, border: 0, color: "white", fontWeight: 800, background: "linear-gradient(135deg,#d946ef,#fb923c)", cursor: "pointer" }}
+            style={{ marginTop: 12, width: "100%", padding: 12, borderRadius: 14, border: 0, color: "white", fontWeight: 800, fontSize: 15, background: "linear-gradient(135deg,#d946ef,#fb923c)", cursor: "pointer" }}
           >
             Comenzar
           </button>
