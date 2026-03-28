@@ -9,7 +9,7 @@ import React, { useMemo, useState } from "react";
  * 5. Duel: al llegar a 80 XP, elegir B -> feedback positivo.
  */
 
-const USE_REAL_AI = false;
+const USE_REAL_AI = true;
 
 const levels = [
   { n: 1, name: "Novato", icon: "👶" },
@@ -398,7 +398,7 @@ export default function App() {
               <div style={{ color: "#64748b" }}>{promptsByMode[mode]}</div>
             </div>
             <div style={{ fontSize: 12, fontWeight: 800, background: USE_REAL_AI ? "#dcfce7" : "#fee2e2", color: USE_REAL_AI ? "#166534" : "#991b1b", padding: "8px 10px", borderRadius: 999 }}>
-              {USE_REAL_AI ? "IA real activada" : "Modo demo"}
+            {USE_REAL_AI ? "IA REAL ACTIVADA 🔥🔥🔥" : "MODO DEMO ❌"}
             </div>
           </div>
 
