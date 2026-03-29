@@ -217,7 +217,8 @@ export default function App() {
   const [avatarMood, setAvatarMood] = useState("happy");
   const [feedback, setFeedback] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
+  const [studentName, setStudentName] = useState("");
+  const [studentLevel, setStudentLevel] = useState("");
   const currentLevelIndex = Math.min(levels.length - 1, Math.floor(xp / 80));
   const currentLevel = levels[currentLevelIndex];
   const progressWithinLevel = ((xp % 80) / 80) * 100;
@@ -246,7 +247,44 @@ export default function App() {
     return gainedXp;
   };
 
-  const handleSend = async () => {
+  const sendMessage = async () => {
+    if (!input.trim()) return;
+  
+    const newMessage = { role: "user", text: input };
+    const updatedConversation = [...conversation, newMessage];
+  
+    setConversation(updatedConversation);
+    setInput("");
+  
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userText: input,
+          mode: "chat",
+          conversation: updatedConversation,
+  
+          // 🔥 ESTO ES LO NUEVO
+          studentName: studentName,
+          studentLevel: studentLevel,
+        }),
+      });
+  
+      const data = await res.json();
+  
+      const aiMessage = {
+        role: "assistant",
+        text: data.reply,
+      };
+  
+      setConversation((prev) => [...prev, aiMessage]);
+    } catch (err) {
+      console.error(err);
+    }
+  };
     if (!input.trim() || isLoading) return;
 
     const userText = input.trim();
