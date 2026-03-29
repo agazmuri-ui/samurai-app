@@ -6,15 +6,15 @@ export default async function handler(req, res) {
   }
 
   try {
-    if (!process.env.OPENAI_API_KEY) {
+    const apiKey = process.env.OPENAI_API_KEY;
+
+    if (!apiKey) {
       return res.status(500).json({ error: "Falta OPENAI_API_KEY en Vercel" });
     }
 
-    const client = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    const client = new OpenAI({ apiKey });
 
-    const { userText, mode, conversation } = req.body || {};
+    const { userText = "", mode = "chat", conversation = [] } = req.body || {};
 
     const systemPrompt = `
 Eres SamurAI del pensamiento 🥷.
@@ -26,7 +26,7 @@ Máximo 4 líneas.
 Modo actual: ${mode}
 `;
 
-    const history = (conversation || [])
+    const history = conversation
       .map((m) => `${m.role === "assistant" ? "Tutor" : "Alumno"}: ${m.text}`)
       .join("\n");
 
