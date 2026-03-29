@@ -1,6 +1,16 @@
 import OpenAI from "openai";
 
+// ⚠️ FIX PRINCIPAL: usar runtime Node explícito para Vercel
+export const config = {
+  runtime: "nodejs",
+};
+
 export default async function handler(req, res) {
+  // Permitir GET para debug
+  if (req.method === "GET") {
+    return res.status(200).json({ status: "API alive" });
+  }
+
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -9,12 +19,16 @@ export default async function handler(req, res) {
     const apiKey = process.env.OPENAI_API_KEY;
 
     if (!apiKey) {
+      console.error("❌ Falta OPENAI_API_KEY");
       return res.status(500).json({ error: "Falta OPENAI_API_KEY en Vercel" });
     }
 
     const client = new OpenAI({ apiKey });
 
-    const { userText = "", mode = "chat", conversation = [] } = req.body || {};
+    // ⚠️ FIX: asegurar parseo del body
+    const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+
+    const { userText = "", mode = "chat", conversation = [] } = body || {};
 
     const systemPrompt = `
 Eres SamurAI del pensamiento 🥷.
@@ -48,9 +62,11 @@ Modo actual: ${mode}
       reply: response.output_text || "No pude generar respuesta.",
     });
   } catch (error) {
-    console.error("ERROR /api/chat:", error);
+    console.error("🔥 ERROR /api/chat:", error);
+
     return res.status(500).json({
       error: error?.message || "Error con la IA",
+      stack: error?.stack, // 🔥 clave para debug en Vercel
     });
   }
 }
