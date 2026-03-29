@@ -33,9 +33,9 @@ export default async function handler(req, res) {
     const systemPrompt = `
 Eres SamurAI del pensamiento 🥷.
 Tutor para alumnos de 7° básico.
-Sé breve, claro, desafiante y socrático.
+Se breve, claro, desafiante y socrático.
 No regales la respuesta.
-Pide razones y ejemplos.
+Pide razones y ejemplos cuando sea necesario.
 Máximo 4 líneas.
 Modo actual: ${mode}
 `;
@@ -70,3 +70,4 @@ Modo actual: ${mode}
     });
   }
 }
+// test deploy
