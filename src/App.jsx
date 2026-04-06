@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 /**
  * App basada en tu versión real, pero:
@@ -152,7 +152,13 @@ export default function App() {
 
   const levelUpAudioRef = useRef(null);
   const badgeAudioRef = useRef(null);
-
+  useEffect(() => {
+    levelUpAudioRef.current = new Audio("/level-up.mp3");
+    levelUpAudioRef.current.preload = "auto";
+  
+    badgeAudioRef.current = new Audio("/badge.mp3");
+    badgeAudioRef.current.preload = "auto";
+  }, []);
   const currentLevelIndex = Math.min(levels.length - 1, Math.floor(xp / 80));
   const currentLevel = levels[currentLevelIndex];
   const progressWithinLevel = ((xp % 80) / 80) * 100;
@@ -161,30 +167,36 @@ export default function App() {
     [messages]
   );
 
-  const playLevelUpSound = () => {
+  const safePlay = async (audioRef, src) => {
     if (!soundOn) return;
+  
     try {
-      if (!levelUpAudioRef.current) {
-        levelUpAudioRef.current = new Audio("/level-up.mp3");
+      if (!audioRef.current) {
+        audioRef.current = new Audio(src);
+        audioRef.current.preload = "auto";
       }
-      levelUpAudioRef.current.currentTime = 0;
-      levelUpAudioRef.current.play();
-    } catch (e) {
-      console.error("No se pudo reproducir level-up.mp3", e);
+  
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+  
+      const playPromise = audioRef.current.play();
+  
+      if (playPromise !== undefined) {
+        await playPromise.catch(() => {
+          // Silenciamos errores de reproducción del navegador
+        });
+      }
+    } catch {
+      // No hacemos console.error para no ensuciar la consola
     }
   };
-
+  
+  const playLevelUpSound = () => {
+    safePlay(levelUpAudioRef, "/level-up.mp3");
+  };
+  
   const playBadgeSound = () => {
-    if (!soundOn) return;
-    try {
-      if (!badgeAudioRef.current) {
-        badgeAudioRef.current = new Audio("/badge.mp3");
-      }
-      badgeAudioRef.current.currentTime = 0;
-      badgeAudioRef.current.play();
-    } catch (e) {
-      console.error("No se pudo reproducir badge.mp3", e);
-    }
+    safePlay(badgeAudioRef, "/badge.mp3");
   };
 
   const addBadge = (badge) => {
