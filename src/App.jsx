@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-
+const [currentLevelIndex, setCurrentLevelIndex] = useState(0);
 /**
  * App basada en tu versión real, pero:
  * - sin modos de juego
@@ -159,7 +159,6 @@ export default function App() {
     badgeAudioRef.current = new Audio("/badge.mp3");
     badgeAudioRef.current.preload = "auto";
   }, []);
-  const currentLevelIndex = Math.min(levels.length - 1, Math.floor(xp / 80));
   const currentLevel = levels[currentLevelIndex];
   const progressWithinLevel = ((xp % 80) / 80) * 100;
   const userTurns = useMemo(
@@ -222,7 +221,16 @@ export default function App() {
     if (text.trim().length < 15) gainedXp = Math.max(0, gainedXp - 3);
     return gainedXp;
   };
-
+  const extractLevelFromReply = (replyText) => {
+    const match = replyText.match(/Nivel inicial:\s*(\d+)\./i);
+    if (match) {
+      const levelNumber = Number(match[1]);
+      if (!Number.isNaN(levelNumber) && levelNumber >= 1 && levelNumber <= levels.length) {
+        return levelNumber - 1;
+      }
+    }
+    return null;
+  };
   const evaluateBadges = (text, evalInfo) => {
     const lower = text.toLowerCase();
 
@@ -265,7 +273,10 @@ export default function App() {
 
     const previousLevelIndex = currentLevelIndex;
     const nextConversation = [...messages, { role: "user", text: userText }];
-
+const detectedLevelIndex = extractLevelFromReply(reply);
+if (detectedLevelIndex !== null) {
+  setCurrentLevelIndex(detectedLevelIndex);
+}
     setMessages(nextConversation);
     setInput("");
     setAvatarMood(evalInfo.mood);
@@ -284,7 +295,9 @@ export default function App() {
       const totalGainedXp = gainedXpBase + bonusXp;
       const nextXp = xp + totalGainedXp;
       const nextLevelIndex = Math.min(levels.length - 1, Math.floor(nextXp / 80));
-
+      if (nextLevelIndex > currentLevelIndex) {
+        setCurrentLevelIndex(nextLevelIndex);
+      }
       setMessages((prev) => [...prev, { role: "assistant", text: reply }]);
       setXp(nextXp);
 
