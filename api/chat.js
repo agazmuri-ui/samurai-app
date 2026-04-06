@@ -47,7 +47,18 @@ function normalizeYes(text = "") {
 function normalizeOption(text = "") {
   return text.trim().toLowerCase().replace(/\)/g, "").replace(/\./g, "");
 }
+function extractOptionLetter(text = "") {
+  const normalized = normalizeOption(text);
 
+  if (!normalized) return "";
+
+  if (normalized.startsWith("a")) return "a";
+  if (normalized.startsWith("b")) return "b";
+  if (normalized.startsWith("c")) return "c";
+  if (normalized.startsWith("d")) return "d";
+
+  return "";
+}
 function buildHistory(conversation = []) {
   return conversation
     .map((m) => `${m.role === "assistant" ? "SamurAI" : "Alumno"}: ${m.text}`)
@@ -83,6 +94,7 @@ export default async function handler(req, res) {
 
     const trimmedUserText = userText.trim();
     const normalizedUserText = normalizeOption(trimmedUserText);
+    const optionLetter = extractOptionLetter(trimmedUserText);
 
     const assistantMessages = conversation.filter((m) => m.role === "assistant");
     const userMessages = conversation.filter((m) => m.role === "user");
@@ -145,7 +157,7 @@ Responde solo con la letra.`,
     if (
       !hasInitialLevel &&
       /Pregunta 1:/i.test(lastAssistantText) &&
-      ["a", "b", "c", "d"].includes(normalizedUserText)
+      ["a", "b", "c", "d"].includes(optionLetter)
     ) {
       return res.status(200).json({
         reply: `Bien. Vamos con el segundo desafío.
@@ -166,7 +178,7 @@ Responde solo con la letra.`,
     if (
       !hasInitialLevel &&
       /Pregunta 2:/i.test(lastAssistantText) &&
-      ["a", "b"].includes(normalizedUserText)
+      ["a", "b"].includes(optionLetter)
     ) {
       return res.status(200).json({
         reply: `Vamos con el tercer desafío.
@@ -356,13 +368,16 @@ Hola. Mi nombre es “SamurAI del pensamiento”🥷 y soy ayudante de Humanismo
 Para partir, dime: ¿Cómo te llamas?
 No avances sin respuesta.
 Segunda interacción obligatoria (después de que te diga su nombre)
-Hola (nombre). A continuación te plantearé algunos desafíos para ver qué tipo de pensador eres, haciendo un diagnóstico inicial, pero no te preocupes, no importa el resultado. ¡Ya que iremos avanzando juntos!
+Hola (nombre). A continuación te plantearé 4 desafíos para ver qué tipo de pensador eres, asignándote un nivel de pensador. ¡No te preocupes, no importa el resultado. ¡Ya que iremos avanzando juntos!
 ¿Estás listo(a)?
 No avances sin respuesta.
-Tercera interacción obligatoria
-¡Muy bien! Aquí te va el primer desafío.
-Le pondrás un tema, y le harás una primera pregunta de alternativas a) b) c) o d). El tema será “la importancia de aprender a pensar bien”. Una vez que te responda, hazle 2 o 3 preguntas más breves, de distintas metodologías, que sean dinámicas y rápidas de responder, y solo una final de desarrollo no muy largo, para que el alumno tenga que escribir y tú puedas evaluar su escritura.
-Diagnóstico inicial
+Tercera interacción obligatoria - Diagnóstico inicial
+¡Muy bien! Aquí te va el 1er desafío.
+Le pondrás un tema, y le harás una primera pregunta de alternativas a) b) c) o d). El tema será “la importancia de aprender a pensar bien”. 
+Si responde bien le comentas "Vas por buen camino, aquí te va el 2do desafío". Le planteas la segunda pregunta.
+Si responde bien le comentas "¡Bien!, aquí te va el 3er desafío". Le planteas la tercera pregunta.
+Si responde bien le comentas "Ya casi terminamos, aquí te va el 4to desafío". Le planteas la cuarta pregunta, y si responde bien analizas sus respuestas y le das el diagnóstico inicial.
+Recuerda que los 4 desafíos sean con distintas metodologías de preguntas. 3 preguntas de alterantiva, como por ejemplos a,b,c,d,e o verdadero y falso, o detectar la parte errónea de una frase sin tener que justificar. La 4 preguntas será de desarrollo breve donde le pedirás 1 ejemplo y coherencia lógica.
 Para hacer el diagnóstico inicial deberás detectar:
 nivel de profundidad,
 capacidad y velocidad para responder preguntas de alternativa,
