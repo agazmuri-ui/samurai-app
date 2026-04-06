@@ -226,13 +226,23 @@ export default function App() {
   };
 
   const extractLevelFromReply = (replyText) => {
-    const match = replyText.match(/Nivel inicial:\s*(\d+)\./i);
-    if (match) {
-      const levelNumber = Number(match[1]);
-      if (!Number.isNaN(levelNumber) && levelNumber >= 1 && levelNumber <= levels.length) {
-        return levelNumber - 1;
+    const patterns = [
+      /Nivel inicial del alumno:\s*(\d+)/i,
+      /Nivel inicial:\s*(\d+)/i,
+      /Estás en nivel\s*(\d+)/i,
+      /Nivel\s*(\d+)\s*[:.\-]/i,
+    ];
+  
+    for (const pattern of patterns) {
+      const match = replyText.match(pattern);
+      if (match) {
+        const levelNumber = Number(match[1]);
+        if (!Number.isNaN(levelNumber) && levelNumber >= 1 && levelNumber <= levels.length) {
+          return levelNumber - 1;
+        }
       }
     }
+  
     return null;
   };
 
