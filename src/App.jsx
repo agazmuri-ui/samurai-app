@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-const [currentLevelIndex, setCurrentLevelIndex] = useState(0);
+
 /**
  * App basada en tu versión real, pero:
  * - sin modos de juego
@@ -149,16 +149,19 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [badges, setBadges] = useState([]);
   const [soundOn, setSoundOn] = useState(true);
+  const [currentLevelIndex, setCurrentLevelIndex] = useState(0);
 
   const levelUpAudioRef = useRef(null);
   const badgeAudioRef = useRef(null);
+
   useEffect(() => {
     levelUpAudioRef.current = new Audio("/level-up.mp3");
     levelUpAudioRef.current.preload = "auto";
-  
+
     badgeAudioRef.current = new Audio("/badge.mp3");
     badgeAudioRef.current.preload = "auto";
   }, []);
+
   const currentLevel = levels[currentLevelIndex];
   const progressWithinLevel = ((xp % 80) / 80) * 100;
   const userTurns = useMemo(
@@ -168,18 +171,18 @@ export default function App() {
 
   const safePlay = async (audioRef, src) => {
     if (!soundOn) return;
-  
+
     try {
       if (!audioRef.current) {
         audioRef.current = new Audio(src);
         audioRef.current.preload = "auto";
       }
-  
+
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
-  
+
       const playPromise = audioRef.current.play();
-  
+
       if (playPromise !== undefined) {
         await playPromise.catch(() => {
           // Silenciamos errores de reproducción del navegador
@@ -189,11 +192,11 @@ export default function App() {
       // No hacemos console.error para no ensuciar la consola
     }
   };
-  
+
   const playLevelUpSound = () => {
     safePlay(levelUpAudioRef, "/level-up.mp3");
   };
-  
+
   const playBadgeSound = () => {
     safePlay(badgeAudioRef, "/badge.mp3");
   };
@@ -221,6 +224,7 @@ export default function App() {
     if (text.trim().length < 15) gainedXp = Math.max(0, gainedXp - 3);
     return gainedXp;
   };
+
   const extractLevelFromReply = (replyText) => {
     const match = replyText.match(/Nivel inicial:\s*(\d+)\./i);
     if (match) {
@@ -231,6 +235,7 @@ export default function App() {
     }
     return null;
   };
+
   const evaluateBadges = (text, evalInfo) => {
     const lower = text.toLowerCase();
 
@@ -273,10 +278,7 @@ export default function App() {
 
     const previousLevelIndex = currentLevelIndex;
     const nextConversation = [...messages, { role: "user", text: userText }];
-const detectedLevelIndex = extractLevelFromReply(reply);
-if (detectedLevelIndex !== null) {
-  setCurrentLevelIndex(detectedLevelIndex);
-}
+
     setMessages(nextConversation);
     setInput("");
     setAvatarMood(evalInfo.mood);
@@ -291,13 +293,20 @@ if (detectedLevelIndex !== null) {
         studentLevel: currentLevel.name,
       });
 
+      const detectedLevelIndex = extractLevelFromReply(reply);
+      if (detectedLevelIndex !== null) {
+        setCurrentLevelIndex(detectedLevelIndex);
+      }
+
       const bonusXp = evaluateBadges(userText, evalInfo);
       const totalGainedXp = gainedXpBase + bonusXp;
       const nextXp = xp + totalGainedXp;
       const nextLevelIndex = Math.min(levels.length - 1, Math.floor(nextXp / 80));
+
       if (nextLevelIndex > currentLevelIndex) {
         setCurrentLevelIndex(nextLevelIndex);
       }
+
       setMessages((prev) => [...prev, { role: "assistant", text: reply }]);
       setXp(nextXp);
 
@@ -350,22 +359,22 @@ if (detectedLevelIndex !== null) {
           </p>
 
           <button
-  onClick={startApp}
-  style={{
-    marginTop: 12,
-    width: "100%",
-    padding: 12,
-    borderRadius: 14,
-    border: 0,
-    color: "white",
-    fontWeight: 800,
-    fontSize: 15,
-    background: "linear-gradient(135deg,#2563eb,#06b6d4,#f59e0b)",
-    cursor: "pointer",
-  }}
->
-  🚀 Entrar a la batalla!
-</button>
+            onClick={startApp}
+            style={{
+              marginTop: 12,
+              width: "100%",
+              padding: 12,
+              borderRadius: 14,
+              border: 0,
+              color: "white",
+              fontWeight: 800,
+              fontSize: 15,
+              background: "linear-gradient(135deg,#2563eb,#06b6d4,#f59e0b)",
+              cursor: "pointer",
+            }}
+          >
+            🚀 Entrar a la batalla!
+          </button>
 
           <div style={{ marginTop: 14, fontSize: 12, color: "#64748b" }}>
             🔊 Luego podrás activar o desactivar los sonidos
@@ -675,4 +684,4 @@ if (detectedLevelIndex !== null) {
       </div>
     </div>
   );
-} 
+}
