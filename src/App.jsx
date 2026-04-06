@@ -23,14 +23,12 @@ const levels = [
   { n: 10, name: "Samurai del Pensamiento", icon: "👑" },
 ];
 
-const starterMessages = (name = "") => [
+const starterMessages = () => [
   {
     role: "assistant",
-    text: `Hola ${name}. Mi nombre es “SamurAI del pensamiento”🥷 y soy ayudante de Humanismo Cristiano del Colegio San Benito. Estoy aquí para ayudarte a transformarte en un verdadero Samurai del Pensamiento.
+    text: `Hola. Mi nombre es “SamurAI del pensamiento”🥷 y soy ayudante de Humanismo Cristiano del Colegio San Benito. Estoy aquí para ayudarte a transformarte en un verdadero Samurai del Pensamiento!
 
-Iremos avanzando con puntos, niveles y condecoraciones. Cuando estés listo, responde esta pregunta:
-
-¿Por qué crees que es importante aprender a pensar bien?`,
+Para partir, dime: ¿Cómo te llamas?`,
   },
 ];
 
@@ -199,11 +197,8 @@ export default function App() {
   };
 
   const startApp = () => {
-    if (!nameInput.trim()) return;
-    const cleanName = nameInput.trim();
-    setStudentName(cleanName);
-    setMessages(starterMessages(cleanName));
     setStarted(true);
+    setMessages(starterMessages());
   };
 
   const rewardXp = (score, text) => {
@@ -329,38 +324,23 @@ export default function App() {
             Entrena tu mente, gana experiencia y sube en la Escalera del Pensador
           </p>
 
-          <input
-            value={nameInput}
-            onChange={(e) => setNameInput(e.target.value)}
-            placeholder="Tu nombre..."
-            style={{
-              width: "100%",
-              boxSizing: "border-box",
-              padding: 12,
-              borderRadius: 14,
-              border: "1px solid #cbd5e1",
-              marginTop: 14,
-              fontSize: 15,
-            }}
-          />
-
           <button
-            onClick={startApp}
-            style={{
-              marginTop: 12,
-              width: "100%",
-              padding: 12,
-              borderRadius: 14,
-              border: 0,
-              color: "white",
-              fontWeight: 800,
-              fontSize: 15,
-              background: "linear-gradient(135deg,#2563eb,#06b6d4,#f59e0b)",
-              cursor: "pointer",
-            }}
-          >
-            🚀 Empezar misión
-          </button>
+  onClick={startApp}
+  style={{
+    marginTop: 12,
+    width: "100%",
+    padding: 12,
+    borderRadius: 14,
+    border: 0,
+    color: "white",
+    fontWeight: 800,
+    fontSize: 15,
+    background: "linear-gradient(135deg,#2563eb,#06b6d4,#f59e0b)",
+    cursor: "pointer",
+  }}
+>
+  🚀 Entrar a la batalla!
+</button>
 
           <div style={{ marginTop: 14, fontSize: 12, color: "#64748b" }}>
             🔊 Luego podrás activar o desactivar los sonidos
