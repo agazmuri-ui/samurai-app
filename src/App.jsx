@@ -565,8 +565,11 @@ export default function App() {
   style={{
     width: "100%",
     minHeight: "100vh",
+    display: "flex",
+    flexDirection: "column",
     padding: "20px 40px",
     boxSizing: "border-box",
+    background: "#f1f5f9",
   }}
 >
         <div
