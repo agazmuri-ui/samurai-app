@@ -50,8 +50,11 @@
   }
 }
 
+html,
 body {
   margin: 0;
+  height: 100%;
+  overflow: hidden;
 }
 
 #root {
@@ -59,10 +62,12 @@ body {
   max-width: 720px;
   margin: 0 auto;
   text-align: left;
-  min-height: 100svh;
+  height: 100dvh;
+  max-height: 100dvh;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 h1,

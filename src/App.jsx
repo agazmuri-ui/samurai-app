@@ -543,7 +543,9 @@ export default function App() {
     return (
       <div
         style={{
-          minHeight: "100vh",
+          flex: 1,
+          minHeight: 0,
+          width: "100%",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -551,6 +553,7 @@ export default function App() {
           padding: 24,
           fontFamily: FONT_UI,
           boxSizing: "border-box",
+          overflow: "auto",
         }}
       >
         <div
@@ -623,26 +626,36 @@ export default function App() {
   return (
     <div
       style={{
-        minHeight: "100%",
+        flex: 1,
+        minHeight: 0,
         width: "100%",
+        height: "100%",
         display: "flex",
         flexDirection: "column",
-        gap: 14,
+        gap: 10,
         boxSizing: "border-box",
-        padding: "14px 12px 20px",
+        padding: "10px 12px 12px",
         background: uiTheme.pageBg,
         fontFamily: FONT_UI,
+        overflow: "hidden",
       }}
     >
         <div
           style={{
             ...cardStyle({
+              flex: "0 0 33vh",
+              height: "33vh",
+              maxHeight: "33vh",
+              minHeight: 0,
+              padding: 12,
               flexShrink: 0,
-              padding: 14,
             }),
             display: "flex",
             flexDirection: "column",
-            gap: 12,
+            gap: 10,
+            overflowX: "hidden",
+            overflowY: "auto",
+            WebkitOverflowScrolling: "touch",
           }}
         >
           <div
@@ -969,7 +982,8 @@ export default function App() {
             ...cardStyle({
               flex: 1,
               minHeight: 0,
-              padding: 16,
+              padding: 12,
+              overflow: "hidden",
             }),
             display: "flex",
             flexDirection: "column",
