@@ -19,6 +19,20 @@ const USE_REAL_AI = true;
 const SAVE_COOKIE_NAME = "samurai_progress_v1";
 const SAVE_COOKIE_DAYS = 45;
 
+/** Tipografía y colores tipo “app de práctica” (alegre, alto contraste, gamificado). */
+const FONT_UI = "'Nunito', system-ui, 'Segoe UI', sans-serif";
+
+const uiTheme = {
+  pageBg:
+    "linear-gradient(165deg, #ecfdf5 0%, #d1fae5 22%, #fef9c3 52%, #fce7f3 100%)",
+  splashBg:
+    "linear-gradient(155deg, #bbf7d0 0%, #a7f3d0 35%, #fde68a 70%, #fbcfe8 100%)",
+  cardShadow: "0 4px 0 rgba(15, 23, 42, 0.06), 0 14px 40px rgba(15, 23, 42, 0.1)",
+  primaryBtn: "#22c55e",
+  primaryBtnBottom: "#15803d",
+  progressFill: "linear-gradient(90deg,#22c55e,#84cc16,#eab308)",
+};
+
 const levels = [
   { n: 1, name: "Novato", icon: "👶", avatar: "/avatars/level1.png" },
   { n: 2, name: "Repetidor", icon: "🗣️", avatar: "/avatars/level2.png" },
@@ -134,31 +148,55 @@ async function getTutorReply({ userText, conversation, studentName, studentLevel
 
 function cardStyle(extra = {}) {
   return {
-    background: "rgba(255,255,255,0.96)",
-    borderRadius: 24,
+    background: "#ffffff",
+    borderRadius: 22,
     padding: 18,
-    boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+    border: "2px solid rgba(15, 23, 42, 0.06)",
+    boxShadow: uiTheme.cardShadow,
     ...extra,
   };
 }
 
+function primaryButtonStyle(disabled) {
+  return {
+    padding: "14px 22px",
+    borderRadius: 16,
+    border: "none",
+    color: "white",
+    fontWeight: 900,
+    fontSize: 16,
+    fontFamily: FONT_UI,
+    letterSpacing: 0.3,
+    cursor: disabled ? "not-allowed" : "pointer",
+    opacity: disabled ? 0.55 : 1,
+    background: uiTheme.primaryBtn,
+    boxShadow: disabled
+      ? "inset 0 2px 4px rgba(0,0,0,0.08)"
+      : `0 4px 0 ${uiTheme.primaryBtnBottom}, 0 10px 28px rgba(34,197,94,0.4)`,
+  };
+}
+
 const soundButtonStyle = (active) => ({
-  padding: "10px 12px",
-  borderRadius: 12,
-  border: 0,
-  fontWeight: 800,
+  padding: "10px 14px",
+  borderRadius: 14,
+  border: active ? "2px solid #0f172a" : "2px solid #cbd5e1",
+  fontWeight: 900,
+  fontFamily: FONT_UI,
   cursor: "pointer",
-  background: active ? "#0f172a" : "#e2e8f0",
+  background: active ? "#0f172a" : "#f1f5f9",
   color: active ? "white" : "#334155",
+  boxShadow: active ? "0 3px 0 #020617" : "0 3px 0 #94a3b8",
 });
 
 const compactBadgeStyle = {
-  background: "#f8fafc",
+  background: "linear-gradient(180deg,#f8fafc,#f1f5f9)",
   borderRadius: 999,
-  padding: "7px 10px",
+  padding: "8px 12px",
   fontWeight: 800,
-  border: "1px solid #cbd5e1",
+  fontFamily: FONT_UI,
+  border: "2px solid #e2e8f0",
   fontSize: 13,
+  boxShadow: "0 2px 0 #cbd5e1",
 };
 
 function avatarFrameStyle(levelIndex) {
@@ -202,10 +240,10 @@ function getLadderCardStyle(idx, currentLevelIndex) {
 
   if (idx === currentLevelIndex) {
     return {
-      background: "linear-gradient(135deg,#2563eb,#06b6d4,#f59e0b)",
+      background: "linear-gradient(135deg,#22c55e,#16a34a,#15803d)",
       color: "white",
-      border: "1px solid transparent",
-      boxShadow: "0 8px 20px rgba(37,99,235,0.22)",
+      border: "2px solid rgba(255,255,255,0.35)",
+      boxShadow: "0 4px 0 #14532d, 0 10px 24px rgba(22,163,74,0.35)",
     };
   }
 
@@ -509,41 +547,73 @@ export default function App() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "linear-gradient(135deg,#dbeafe,#cffafe,#fde68a)",
+          background: uiTheme.splashBg,
           padding: 24,
-          fontFamily: "sans-serif",
+          fontFamily: FONT_UI,
           boxSizing: "border-box",
         }}
       >
-        <div style={{ ...cardStyle({ width: "100%", textAlign: "center" }) }}>
-          <div style={{ fontSize: 64, marginBottom: 10 }}>🥷</div>
-          <h1 style={{ margin: 0, fontSize: 28, lineHeight: 1.15 }}>
+        <div
+          style={{
+            ...cardStyle({ width: "100%", maxWidth: 440, textAlign: "center", padding: 28 }),
+          }}
+        >
+          <div
+            style={{
+              fontSize: 72,
+              marginBottom: 8,
+              lineHeight: 1,
+              filter: "drop-shadow(0 6px 12px rgba(15,23,42,0.12))",
+            }}
+          >
+            🥷
+          </div>
+          <h1
+            style={{
+              margin: 0,
+              fontSize: 30,
+              lineHeight: 1.15,
+              fontWeight: 900,
+              color: "#0f172a",
+              letterSpacing: -0.5,
+            }}
+          >
             SamurAI del pensamiento
           </h1>
-          <p style={{ color: "#475569", fontSize: 15, marginTop: 8, lineHeight: 1.45 }}>
-            Entrena tu mente, gana experiencia y sube en la Escalera del Pensador
+          <p
+            style={{
+              color: "#475569",
+              fontSize: 16,
+              marginTop: 10,
+              lineHeight: 1.5,
+              fontWeight: 700,
+            }}
+          >
+            Entrena tu mente, suma XP y sube en la Escalera del Pensador — como un juego, pero
+            pensando en serio.
           </p>
 
           <button
+            type="button"
             onClick={startApp}
             style={{
-              marginTop: 12,
+              ...primaryButtonStyle(false),
+              marginTop: 18,
               width: "100%",
-              padding: 12,
-              borderRadius: 14,
-              border: 0,
-              color: "white",
-              fontWeight: 800,
-              fontSize: 15,
-              background: "linear-gradient(135deg,#2563eb,#06b6d4,#f59e0b)",
-              cursor: "pointer",
             }}
           >
-            🚀 Entrar a la batalla!
+            ¡Vamos! 🚀
           </button>
 
-          <div style={{ marginTop: 14, fontSize: 12, color: "#64748b" }}>
-            🔊 Luego podrás activar o desactivar los sonidos
+          <div
+            style={{
+              marginTop: 16,
+              fontSize: 13,
+              color: "#64748b",
+              fontWeight: 700,
+            }}
+          >
+            🔊 Podrás activar o quitar sonidos cuando entres
           </div>
         </div>
       </div>
@@ -553,25 +623,17 @@ export default function App() {
   return (
     <div
       style={{
-        height: "100vh",
-        overflow: "hidden",
-        background: "linear-gradient(135deg,#eff6ff,#ecfeff,#fef3c7)",
-        padding: 14,
-        fontFamily: "sans-serif",
+        minHeight: "100%",
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        gap: 14,
         boxSizing: "border-box",
+        padding: "14px 12px 20px",
+        background: uiTheme.pageBg,
+        fontFamily: FONT_UI,
       }}
     >
-      <div
-  style={{
-    width: "100%",
-    minHeight: "100vh",
-    display: "flex",
-    flexDirection: "column",
-    padding: "20px 40px",
-    boxSizing: "border-box",
-    background: "#f1f5f9",
-  }}
->
         <div
           style={{
             ...cardStyle({
@@ -684,8 +746,9 @@ export default function App() {
                   style={{
                     width: `${progressWithinLevel}%`,
                     height: "100%",
-                    background: "linear-gradient(135deg,#2563eb,#06b6d4,#f59e0b)",
+                    background: uiTheme.progressFill,
                     transition: "width 0.4s ease",
+                    borderRadius: 999,
                   }}
                 />
               </div>
@@ -720,51 +783,59 @@ export default function App() {
           >
             <div
               style={{
-                background: "#fef08a",
-                borderRadius: 16,
+                background: "linear-gradient(180deg,#fef9c3,#fef08a)",
+                borderRadius: 18,
                 padding: "12px 14px",
+                border: "2px solid #facc15",
+                boxShadow: "0 3px 0 #ca8a04",
               }}
             >
-              <div style={{ fontSize: 11, color: "#475569", fontWeight: 800, textTransform: "uppercase" }}>
+              <div style={{ fontSize: 11, color: "#713f12", fontWeight: 900, textTransform: "uppercase" }}>
                 XP
               </div>
-              <div style={{ fontWeight: 900, fontSize: 24 }}>{xp}</div>
+              <div style={{ fontWeight: 900, fontSize: 26, color: "#422006" }}>{xp}</div>
             </div>
 
             <div
               style={{
-                background: "#bfdbfe",
-                borderRadius: 16,
+                background: "linear-gradient(180deg,#dbeafe,#93c5fd)",
+                borderRadius: 18,
                 padding: "12px 14px",
+                border: "2px solid #60a5fa",
+                boxShadow: "0 3px 0 #2563eb",
               }}
             >
-              <div style={{ fontSize: 11, color: "#475569", fontWeight: 800, textTransform: "uppercase" }}>
+              <div style={{ fontSize: 11, color: "#1e3a8a", fontWeight: 900, textTransform: "uppercase" }}>
                 Racha
               </div>
-              <div style={{ fontWeight: 900, fontSize: 24 }}>🔥 {streak}</div>
+              <div style={{ fontWeight: 900, fontSize: 26, color: "#172554" }}>🔥 {streak}</div>
             </div>
 
             <div
               style={{
-                background: "#dcfce7",
-                borderRadius: 16,
+                background: "linear-gradient(180deg,#dcfce7,#86efac)",
+                borderRadius: 18,
                 padding: "12px 14px",
+                border: "2px solid #4ade80",
+                boxShadow: "0 3px 0 #16a34a",
               }}
             >
-              <div style={{ fontSize: 11, color: "#475569", fontWeight: 800, textTransform: "uppercase" }}>
+              <div style={{ fontSize: 11, color: "#14532d", fontWeight: 900, textTransform: "uppercase" }}>
                 Interacciones
               </div>
-              <div style={{ fontWeight: 900, fontSize: 24 }}>{userTurns}</div>
+              <div style={{ fontWeight: 900, fontSize: 26, color: "#052e16" }}>{userTurns}</div>
             </div>
 
             <div
               style={{
-                background: "#f5d0fe",
-                borderRadius: 16,
+                background: "linear-gradient(180deg,#fae8ff,#e879f9)",
+                borderRadius: 18,
                 padding: "12px 14px",
+                border: "2px solid #d946ef",
+                boxShadow: "0 3px 0 #a21caf",
               }}
             >
-              <div style={{ fontSize: 11, color: "#475569", fontWeight: 800, textTransform: "uppercase" }}>
+              <div style={{ fontSize: 11, color: "#581c87", fontWeight: 900, textTransform: "uppercase" }}>
                 Estado
               </div>
               <div
@@ -812,12 +883,16 @@ export default function App() {
                 <div
                   style={{
                     marginTop: 8,
-                    padding: "10px 12px",
-                    borderRadius: 12,
-                    background: "#f8fafc",
-                    fontWeight: 700,
-                    fontSize: 13,
-                    color: "#334155",
+                    padding: "12px 14px",
+                    borderRadius: 14,
+                    background: feedback.includes("Subiste")
+                      ? "linear-gradient(90deg,#fef9c3,#dcfce7)"
+                      : "#f8fafc",
+                    fontWeight: 800,
+                    fontSize: 14,
+                    color: "#0f172a",
+                    border: feedback.includes("Subiste") ? "2px solid #facc15" : "2px solid #e2e8f0",
+                    boxShadow: feedback.includes("Subiste") ? "0 3px 0 #ca8a04" : "none",
                   }}
                 >
                   {feedback}
@@ -826,15 +901,19 @@ export default function App() {
             </div>
 
             <button
+              type="button"
               onClick={() => setShowLadder((prev) => !prev)}
               style={{
-                padding: "10px 12px",
-                borderRadius: 12,
-                border: "1px solid #cbd5e1",
+                padding: "12px 14px",
+                borderRadius: 14,
+                border: "2px solid #22c55e",
                 background: "white",
-                fontWeight: 800,
+                fontWeight: 900,
+                fontFamily: FONT_UI,
+                color: "#15803d",
                 cursor: "pointer",
                 whiteSpace: "nowrap",
+                boxShadow: "0 3px 0 #86efac",
               }}
             >
               {showLadder ? "Ocultar escalera" : "Ver escalera"}
@@ -908,9 +987,11 @@ export default function App() {
             }}
           >
             <div>
-              <div style={{ fontSize: 26, fontWeight: 900 }}>SamurAI</div>
-              <div style={{ color: "#64748b", fontSize: 14 }}>
-                Responde con profundidad, razones y ejemplos.
+              <div style={{ fontSize: 26, fontWeight: 900, color: "#0f172a", letterSpacing: -0.3 }}>
+                💬 SamurAI
+              </div>
+              <div style={{ color: "#475569", fontSize: 15, fontWeight: 700, marginTop: 2 }}>
+                Cada mensaje cuenta: razones, ejemplos y ganas de pensar mejor.
               </div>
             </div>
           </div>
@@ -941,18 +1022,19 @@ export default function App() {
                   <div
                     style={{
                       maxWidth: "100%",
-                      borderRadius: isUser ? "22px 22px 8px 22px" : "22px 22px 22px 8px",
+                      borderRadius: isUser ? "22px 22px 6px 22px" : "22px 22px 22px 6px",
                       padding: "14px 16px",
                       lineHeight: 1.55,
                       whiteSpace: "pre-wrap",
                       color: isUser ? "white" : "#0f172a",
                       background: isUser
-                        ? "linear-gradient(135deg,#2563eb,#1d4ed8,#0f172a)"
-                        : "linear-gradient(180deg,#ffffff,#f8fafc)",
-                      border: isUser ? "none" : "1px solid #e2e8f0",
+                        ? "linear-gradient(135deg,#22c55e,#16a34a)"
+                        : "#ffffff",
+                      border: isUser ? "2px solid rgba(255,255,255,0.25)" : "2px solid #e2e8f0",
                       boxShadow: isUser
-                        ? "0 8px 18px rgba(37,99,235,0.22)"
-                        : "0 6px 16px rgba(15,23,42,0.06)",
+                        ? "0 4px 0 #14532d, 0 10px 24px rgba(34,197,94,0.3)"
+                        : "0 4px 0 rgba(15,23,42,0.06), 0 8px 20px rgba(15,23,42,0.06)",
+                      borderLeft: isUser ? undefined : "5px solid #22c55e",
                       wordBreak: "break-word",
                     }}
                   >
@@ -975,8 +1057,18 @@ export default function App() {
             })}
 
             {isLoading && (
-              <div style={{ color: "#64748b", fontWeight: 700 }}>
-                SamurAI está pensando...
+              <div
+                style={{
+                  color: "#15803d",
+                  fontWeight: 800,
+                  padding: "10px 14px",
+                  borderRadius: 14,
+                  background: "rgba(255,255,255,0.85)",
+                  border: "2px dashed #86efac",
+                  display: "inline-block",
+                }}
+              >
+                ⏳ SamurAI está pensando…
               </div>
             )}
 
@@ -988,9 +1080,10 @@ export default function App() {
               flexShrink: 0,
               marginTop: 12,
               borderRadius: 20,
-              border: "2px solid #bfdbfe",
-              padding: 12,
-              background: "white",
+              border: "2px solid #86efac",
+              padding: 14,
+              background: "linear-gradient(180deg,#ffffff,#f0fdf4)",
+              boxShadow: "0 4px 0 rgba(22,163,74,0.2)",
             }}
           >
             <div
@@ -1076,25 +1169,20 @@ export default function App() {
   />
 
   <button
+    type="button"
     onClick={handleSend}
     disabled={isLoading}
     style={{
+      ...primaryButtonStyle(isLoading),
       minHeight: 56,
-      padding: "0 18px",
-      borderRadius: 14,
-      border: 0,
-      color: "white",
-      fontWeight: 800,
-      background: "linear-gradient(135deg,#2563eb,#06b6d4,#f59e0b)",
-      cursor: "pointer",
+      alignSelf: "stretch",
     }}
   >
-    Enviar
+    Enviar ⚡
   </button>
 </div>
           </div>
         </div>
       </div>
-    </div>
   );
 }
