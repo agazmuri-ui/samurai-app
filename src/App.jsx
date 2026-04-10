@@ -10,9 +10,14 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
  * - solo el chat tiene scroll
  * - escalera colapsable
  * - panel superior más compacto
+ * - guardado de progreso con cookies
+ * - mejoras visuales del chat
+ * - gamificación más visible
  */
 
 const USE_REAL_AI = true;
+const SAVE_COOKIE_NAME = "samurai_progress_v1";
+const SAVE_COOKIE_DAYS = 45;
 
 const levels = [
   { n: 1, name: "Novato", icon: "👶", avatar: "/avatars/level1.png" },
@@ -35,6 +40,19 @@ const starterMessages = () => [
 Para partir, dime: ¿Cómo te llamas?`,
   },
 ];
+
+function setCookie(name, value, days = 30) {
+  const expires = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+}
+
+function getCookie(name) {
+  const cookieName = `${name}=`;
+  const parts = document.cookie.split(";").map((part) => part.trim());
+  const found = parts.find((part) => part.startsWith(cookieName));
+  if (!found) return null;
+  return decodeURIComponent(found.slice(cookieName.length));
+}
 
 function inferFeedback(text) {
   const lower = text.toLowerCase();
@@ -114,12 +132,6 @@ async function getTutorReply({ userText, conversation, studentName, studentLevel
   return data.reply;
 }
 
-function avatarFace(mood) {
-  if (mood === "happy") return "😄";
-  if (mood === "surprised") return "😮";
-  return "🤔";
-}
-
 function cardStyle(extra = {}) {
   return {
     background: "rgba(255,255,255,0.96)",
@@ -148,6 +160,61 @@ const compactBadgeStyle = {
   border: "1px solid #cbd5e1",
   fontSize: 13,
 };
+
+function avatarFrameStyle(levelIndex) {
+  if (levelIndex >= 9) {
+    return {
+      background: "linear-gradient(135deg,#fef3c7,#f59e0b,#b45309)",
+      boxShadow: "0 0 0 3px rgba(245,158,11,0.25), 0 10px 24px rgba(180,83,9,0.28)",
+    };
+  }
+
+  if (levelIndex >= 6) {
+    return {
+      background: "linear-gradient(135deg,#dbeafe,#60a5fa,#1d4ed8)",
+      boxShadow: "0 0 0 3px rgba(59,130,246,0.2), 0 10px 24px rgba(37,99,235,0.24)",
+    };
+  }
+
+  if (levelIndex >= 3) {
+    return {
+      background: "linear-gradient(135deg,#dcfce7,#4ade80,#16a34a)",
+      boxShadow: "0 0 0 3px rgba(34,197,94,0.18), 0 10px 24px rgba(22,163,74,0.2)",
+    };
+  }
+
+  return {
+    background: "linear-gradient(135deg,#e2e8f0,#cbd5e1,#94a3b8)",
+    boxShadow: "0 8px 20px rgba(0,0,0,0.12)",
+  };
+}
+
+function getLadderCardStyle(idx, currentLevelIndex) {
+  if (idx > currentLevelIndex) {
+    return {
+      background: "#e2e8f0",
+      color: "#94a3b8",
+      border: "1px dashed #cbd5e1",
+      opacity: 0.8,
+      filter: "grayscale(0.35)",
+    };
+  }
+
+  if (idx === currentLevelIndex) {
+    return {
+      background: "linear-gradient(135deg,#2563eb,#06b6d4,#f59e0b)",
+      color: "white",
+      border: "1px solid transparent",
+      boxShadow: "0 8px 20px rgba(37,99,235,0.22)",
+    };
+  }
+
+  return {
+    background: "#f8fafc",
+    color: "#334155",
+    border: "1px solid #cbd5e1",
+  };
+}
 
 export default function App() {
   const [started, setStarted] = useState(false);
@@ -180,12 +247,65 @@ export default function App() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
+  useEffect(() => {
+    const saved = getCookie(SAVE_COOKIE_NAME);
+    if (!saved) return;
+
+    try {
+      const parsed = JSON.parse(saved);
+
+      if (typeof parsed.started === "boolean") setStarted(parsed.started);
+      if (typeof parsed.studentName === "string") setStudentName(parsed.studentName);
+      if (typeof parsed.xp === "number") setXp(parsed.xp);
+      if (typeof parsed.streak === "number") setStreak(parsed.streak);
+      if (typeof parsed.avatarMood === "string") setAvatarMood(parsed.avatarMood);
+      if (typeof parsed.soundOn === "boolean") setSoundOn(parsed.soundOn);
+      if (typeof parsed.currentLevelIndex === "number") setCurrentLevelIndex(parsed.currentLevelIndex);
+      if (Array.isArray(parsed.badges)) setBadges(parsed.badges);
+      if (typeof parsed.showLadder === "boolean") setShowLadder(parsed.showLadder);
+      if (Array.isArray(parsed.messages) && parsed.messages.length > 0) setMessages(parsed.messages);
+    } catch {
+      // ignorar cookie dañada
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!started) return;
+
+    const progressData = {
+      started,
+      studentName,
+      xp,
+      streak,
+      avatarMood,
+      soundOn,
+      currentLevelIndex,
+      badges,
+      showLadder,
+      messages: messages.slice(-12),
+    };
+
+    try {
+      setCookie(SAVE_COOKIE_NAME, JSON.stringify(progressData), SAVE_COOKIE_DAYS);
+    } catch {
+      // no romper si excede espacio
+    }
+  }, [
+    started,
+    studentName,
+    xp,
+    streak,
+    avatarMood,
+    soundOn,
+    currentLevelIndex,
+    badges,
+    showLadder,
+    messages,
+  ]);
+
   const currentLevel = levels[currentLevelIndex];
   const progressWithinLevel = ((xp % 80) / 80) * 100;
-  const userTurns = useMemo(
-    () => messages.filter((m) => m.role === "user").length,
-    [messages]
-  );
+  const userTurns = useMemo(() => messages.filter((m) => m.role === "user").length, [messages]);
 
   const safePlay = async (audioRef, src) => {
     if (!soundOn) return;
@@ -202,12 +322,10 @@ export default function App() {
       const playPromise = audioRef.current.play();
 
       if (playPromise !== undefined) {
-        await playPromise.catch(() => {
-          // Silenciamos errores de reproducción del navegador
-        });
+        await playPromise.catch(() => {});
       }
     } catch {
-      // No hacemos console.error para no ensuciar la consola
+      // ignorar
     }
   };
 
@@ -230,7 +348,9 @@ export default function App() {
 
   const startApp = () => {
     setStarted(true);
-    setMessages(starterMessages());
+    if (!messages.length) {
+      setMessages(starterMessages());
+    }
   };
 
   const rewardXp = (score, text) => {
@@ -361,7 +481,7 @@ export default function App() {
       if (nextLevelIndex > previousLevelIndex) {
         playLevelUpSound();
         setFeedback(
-          `🎉🥇⚔️ Subiste a nivel ${levels[nextLevelIndex].n}: ${levels[nextLevelIndex].icon} ${levels[nextLevelIndex].name} · +${totalGainedXp} XP`
+          `🎉🥇⚔️ Subiste a nivel ${levels[nextLevelIndex].n}: ${levels[nextLevelIndex].name} · +${totalGainedXp} XP`
         );
       } else {
         setFeedback(`Calidad ${evalInfo.score}/5 · +${totalGainedXp} XP`);
@@ -451,7 +571,6 @@ export default function App() {
           gap: 14,
         }}
       >
-        {/* PANEL SUPERIOR FIJO Y COMPACTO */}
         <div
           style={{
             ...cardStyle({
@@ -463,7 +582,6 @@ export default function App() {
             gap: 12,
           }}
         >
-          {/* fila superior */}
           <div
             style={{
               display: "grid",
@@ -473,7 +591,14 @@ export default function App() {
             }}
           >
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 12, color: "#64748b", fontWeight: 800, textTransform: "uppercase" }}>
+              <div
+                style={{
+                  fontSize: 12,
+                  color: "#64748b",
+                  fontWeight: 800,
+                  textTransform: "uppercase",
+                }}
+              >
                 Alumno
               </div>
               <div
@@ -490,50 +615,47 @@ export default function App() {
             </div>
 
             <div
-  style={{
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    background: "#f8fafc",
-    borderRadius: 18,
-    padding: "8px 12px",
-    border: "1px solid #e2e8f0",
-  }}
->
-  <div
-    style={{
-      width: 150,
-      height: 150,
-      borderRadius: 18,
-      overflow: "hidden",
-      flexShrink: 0,
-      background: "#e2e8f0",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      boxShadow: "0 8px 20px rgba(0,0,0,0.12)",
-    }}
-  >
-    <img
-      src={currentLevel.avatar}
-      alt={`Avatar nivel ${currentLevel.n}`}
-      style={{
-        width: "100%",
-        height: "100%",
-        objectFit: "cover",
-      }}
-    />
-  </div>
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                background: "#f8fafc",
+                borderRadius: 18,
+                padding: "8px 12px",
+                border: "1px solid #e2e8f0",
+              }}
+            >
+              <div
+                style={{
+                  width: 110,
+                  height: 110,
+                  borderRadius: 18,
+                  overflow: "hidden",
+                  flexShrink: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  ...avatarFrameStyle(currentLevelIndex),
+                }}
+              >
+                <img
+                  src={currentLevel.avatar}
+                  alt={`Avatar nivel ${currentLevel.n}`}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                />
+              </div>
 
-  <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}>
-    <span style={{ fontSize: 12, color: "#64748b", fontWeight: 800 }}>
-      Nivel
-    </span>
-    <span style={{ fontWeight: 900 }}>
-      {currentLevel.n}
-    </span>
-  </div>
-</div>
+              <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}>
+                <span style={{ fontSize: 12, color: "#64748b", fontWeight: 800 }}>
+                  Nivel
+                </span>
+                <span style={{ fontWeight: 900, fontSize: 20 }}>{currentLevel.n}</span>
+              </div>
+            </div>
 
             <div style={{ minWidth: 0 }}>
               <div
@@ -562,8 +684,21 @@ export default function App() {
                     width: `${progressWithinLevel}%`,
                     height: "100%",
                     background: "linear-gradient(135deg,#2563eb,#06b6d4,#f59e0b)",
+                    transition: "width 0.4s ease",
                   }}
                 />
+              </div>
+              <div
+                style={{
+                  marginTop: 6,
+                  fontSize: 12,
+                  color: "#64748b",
+                  fontWeight: 700,
+                }}
+              >
+                {xp % 80 === 0 && xp > 0
+                  ? "Nivel recién alcanzado"
+                  : `Te faltan ${80 - (xp % 80)} XP para el siguiente nivel`}
               </div>
             </div>
 
@@ -575,7 +710,6 @@ export default function App() {
             </button>
           </div>
 
-          {/* fila stats */}
           <div
             style={{
               display: "grid",
@@ -646,7 +780,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* fila badges + feedback + botón escalera */}
           <div
             style={{
               display: "grid",
@@ -720,34 +853,37 @@ export default function App() {
                   gap: 8,
                 }}
               >
-                {levels.map((levelItem, idx) => (
-                  <div
-                    key={levelItem.n}
-                    style={{
-                      borderRadius: 14,
-                      padding: "10px 12px",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      background:
-                        idx === currentLevelIndex
-                          ? "linear-gradient(135deg,#2563eb,#06b6d4,#f59e0b)"
-                          : "#f1f5f9",
-                      color: idx === currentLevelIndex ? "white" : "#334155",
-                      fontWeight: 700,
-                    }}
-                  >
-                    <span>
-                      {levelItem.icon} {levelItem.name}
-                    </span>
-                    <span>{levelItem.n}</span>
-                  </div>
-                ))}
+                {levels.map((levelItem, idx) => {
+                  const ladderStyle = getLadderCardStyle(idx, currentLevelIndex);
+                  const isLocked = idx > currentLevelIndex;
+
+                  return (
+                    <div
+                      key={levelItem.n}
+                      style={{
+                        borderRadius: 14,
+                        padding: "10px 12px",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        fontWeight: 800,
+                        ...ladderStyle,
+                      }}
+                    >
+                      <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span>{isLocked ? "🔒" : levelItem.icon}</span>
+                        <span>{levelItem.name}</span>
+                      </span>
+
+                      <span style={{ opacity: isLocked ? 0.7 : 1 }}>{levelItem.n}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
         </div>
 
-        {/* ZONA CHAT */}
         <div
           style={{
             ...cardStyle({
@@ -759,7 +895,6 @@ export default function App() {
             flexDirection: "column",
           }}
         >
-          {/* encabezado del chat */}
           <div
             style={{
               flexShrink: 0,
@@ -779,7 +914,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* mensajes con scroll */}
           <div
             style={{
               flex: 1,
@@ -792,33 +926,52 @@ export default function App() {
               scrollBehavior: "smooth",
             }}
           >
-            {messages.map((m, i) => (
-              <div
-                key={i}
-                style={{
-                  display: "flex",
-                  justifyContent: m.role === "user" ? "flex-end" : "flex-start",
-                }}
-              >
+            {messages.map((m, i) => {
+              const isUser = m.role === "user";
+
+              return (
                 <div
+                  key={i}
                   style={{
-                    maxWidth: "82%",
-                    borderRadius: 20,
-                    padding: "14px 16px",
-                    lineHeight: 1.5,
-                    whiteSpace: "pre-wrap",
-                    color: m.role === "user" ? "white" : "#0f172a",
-                    background:
-                      m.role === "user"
-                        ? "linear-gradient(135deg,#2563eb,#0f172a)"
-                        : "#f1f5f9",
-                    wordBreak: "break-word",
+                    display: "flex",
+                    justifyContent: isUser ? "flex-end" : "flex-start",
                   }}
                 >
-                  {m.text}
+                  <div
+                    style={{
+                      maxWidth: "82%",
+                      borderRadius: isUser ? "22px 22px 8px 22px" : "22px 22px 22px 8px",
+                      padding: "14px 16px",
+                      lineHeight: 1.55,
+                      whiteSpace: "pre-wrap",
+                      color: isUser ? "white" : "#0f172a",
+                      background: isUser
+                        ? "linear-gradient(135deg,#2563eb,#1d4ed8,#0f172a)"
+                        : "linear-gradient(180deg,#ffffff,#f8fafc)",
+                      border: isUser ? "none" : "1px solid #e2e8f0",
+                      boxShadow: isUser
+                        ? "0 8px 18px rgba(37,99,235,0.22)"
+                        : "0 6px 16px rgba(15,23,42,0.06)",
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 800,
+                        textTransform: "uppercase",
+                        opacity: 0.75,
+                        marginBottom: 6,
+                      }}
+                    >
+                      {isUser ? "Tú" : "SamurAI"}
+                    </div>
+
+                    <div>{m.text}</div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {isLoading && (
               <div style={{ color: "#64748b", fontWeight: 700 }}>
@@ -829,7 +982,6 @@ export default function App() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* input fijo abajo */}
           <div
             style={{
               flexShrink: 0,
@@ -852,52 +1004,63 @@ export default function App() {
               Tu respuesta
             </div>
 
+            <div
+              style={{
+                fontSize: 12,
+                color: "#64748b",
+                marginBottom: 8,
+                fontWeight: 700,
+              }}
+            >
+              ✍️ Responde con tus propias palabras. No se permite copiar ni pegar.
+            </div>
+
             <div style={{ display: "flex", gap: 10 }}>
-            <input
-  value={input}
-  onChange={(e) => setInput(e.target.value)}
-  onKeyDown={(e) => {
-    const key = e.key.toLowerCase();
-    const usingCommand = e.ctrlKey || e.metaKey;
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  const key = e.key.toLowerCase();
+                  const usingCommand = e.ctrlKey || e.metaKey;
 
-    if (usingCommand && (key === "v" || key === "c" || key === "x")) {
-      e.preventDefault();
-      setFeedback("⚠️ No se permite copiar ni pegar. Escribe con tus propias palabras.");
-      return;
-    }
+                  if (usingCommand && (key === "v" || key === "c" || key === "x")) {
+                    e.preventDefault();
+                    setFeedback("⚠️ No se permite copiar ni pegar. Escribe con tus propias palabras.");
+                    return;
+                  }
 
-    if (e.key === "Enter") {
-      handleSend();
-    }
-  }}
-  onPaste={(e) => {
-    e.preventDefault();
-    setFeedback("⚠️ No se permite pegar texto. Escribe con tus propias palabras.");
-  }}
-  onCopy={(e) => {
-    e.preventDefault();
-    setFeedback("⚠️ No se permite copiar desde este espacio.");
-  }}
-  onCut={(e) => {
-    e.preventDefault();
-    setFeedback("⚠️ No se permite cortar texto desde este espacio.");
-  }}
-  onDrop={(e) => {
-    e.preventDefault();
-    setFeedback("⚠️ No se permite arrastrar texto aquí.");
-  }}
-  onContextMenu={(e) => {
-    e.preventDefault();
-  }}
-  placeholder="Escribe una respuesta ..."
-  style={{
-    flex: 1,
-    padding: 14,
-    borderRadius: 14,
-    border: "1px solid #cbd5e1",
-    fontSize: 15,
-  }}
-/>
+                  if (e.key === "Enter") {
+                    handleSend();
+                  }
+                }}
+                onPaste={(e) => {
+                  e.preventDefault();
+                  setFeedback("⚠️ No se permite pegar texto. Escribe con tus propias palabras.");
+                }}
+                onCopy={(e) => {
+                  e.preventDefault();
+                  setFeedback("⚠️ No se permite copiar desde este espacio.");
+                }}
+                onCut={(e) => {
+                  e.preventDefault();
+                  setFeedback("⚠️ No se permite cortar texto desde este espacio.");
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setFeedback("⚠️ No se permite arrastrar texto aquí.");
+                }}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                }}
+                placeholder="Escribe una respuesta ..."
+                style={{
+                  flex: 1,
+                  padding: 14,
+                  borderRadius: 14,
+                  border: "1px solid #cbd5e1",
+                  fontSize: 15,
+                }}
+              />
 
               <button
                 onClick={handleSend}
