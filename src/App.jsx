@@ -860,52 +860,6 @@ export default function App() {
             </div>
           </div>
         </div>
-
-        <div style={{ ...cardStyle(), display: "flex", flexDirection: "column", gap: 14 }}>
-          <div style={{ fontSize: 22, fontWeight: 900 }}>Escalera del pensador</div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }}>
-            {levels.map((levelItem, idx) => (
-              <div
-                key={levelItem.n}
-                style={{
-                  borderRadius: 14,
-                  padding: "10px 12px",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  background:
-                    idx === currentLevelIndex
-                      ? "linear-gradient(135deg,#2563eb,#06b6d4,#f59e0b)"
-                      : "#f1f5f9",
-                  color: idx === currentLevelIndex ? "white" : "#334155",
-                  fontWeight: 700,
-                }}
-              >
-                <span>
-                  {levelItem.icon} {levelItem.name}
-                </span>
-                <span>{levelItem.n}</span>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ color: "#475569", fontWeight: 700 }}>
-            Interacciones del alumno: {userTurns}
-          </div>
-
-          {feedback && (
-            <div
-              style={{
-                padding: 12,
-                borderRadius: 14,
-                background: "#f8fafc",
-                fontWeight: 700,
-              }}
-            >
-              {feedback}
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
