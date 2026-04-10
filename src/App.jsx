@@ -827,20 +827,51 @@ export default function App() {
             </div>
 
             <div style={{ display: "flex", gap: 10 }}>
-              <input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                placeholder="Escribe una respuesta con razón y ejemplo..."
-                style={{
-                  flex: 1,
-                  padding: 14,
-                  borderRadius: 14,
-                  border: "1px solid #cbd5e1",
-                  fontSize: 15,
-                  outline: "none",
-                }}
-              />
+            <input
+  value={input}
+  onChange={(e) => setInput(e.target.value)}
+  onKeyDown={(e) => {
+    const key = e.key.toLowerCase();
+    const usingCommand = e.ctrlKey || e.metaKey;
+
+    if (usingCommand && (key === "v" || key === "c" || key === "x")) {
+      e.preventDefault();
+      setFeedback("⚠️ No se permite copiar ni pegar. Escribe con tus propias palabras.");
+      return;
+    }
+
+    if (e.key === "Enter") {
+      handleSend();
+    }
+  }}
+  onPaste={(e) => {
+    e.preventDefault();
+    setFeedback("⚠️ No se permite pegar texto. Escribe con tus propias palabras.");
+  }}
+  onCopy={(e) => {
+    e.preventDefault();
+    setFeedback("⚠️ No se permite copiar desde este espacio.");
+  }}
+  onCut={(e) => {
+    e.preventDefault();
+    setFeedback("⚠️ No se permite cortar texto desde este espacio.");
+  }}
+  onDrop={(e) => {
+    e.preventDefault();
+    setFeedback("⚠️ No se permite arrastrar texto aquí.");
+  }}
+  onContextMenu={(e) => {
+    e.preventDefault();
+  }}
+  placeholder="Escribe una respuesta ..."
+  style={{
+    flex: 1,
+    padding: 14,
+    borderRadius: 14,
+    border: "1px solid #cbd5e1",
+    fontSize: 15,
+  }}
+/>
 
               <button
                 onClick={handleSend}
