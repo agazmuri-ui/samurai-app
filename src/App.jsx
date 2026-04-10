@@ -502,15 +502,16 @@ export default function App() {
 >
   <div
     style={{
-      width: 54,
-      height: 54,
-      borderRadius: 14,
+      width: 150,
+      height: 150,
+      borderRadius: 18,
       overflow: "hidden",
       flexShrink: 0,
       background: "#e2e8f0",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
+      boxShadow: "0 8px 20px rgba(0,0,0,0.12)",
     }}
   >
     <img
