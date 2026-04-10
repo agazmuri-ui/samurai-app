@@ -6,6 +6,10 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
  * - con IA real
  * - con XP, nivel, racha y condecoraciones
  * - con sonidos ON/OFF para nivel y badge
+ * - layout con panel superior fijo
+ * - solo el chat tiene scroll
+ * - escalera colapsable
+ * - panel superior más compacto
  */
 
 const USE_REAL_AI = true;
@@ -118,9 +122,9 @@ function avatarFace(mood) {
 
 function cardStyle(extra = {}) {
   return {
-    background: "white",
+    background: "rgba(255,255,255,0.96)",
     borderRadius: 24,
-    padding: 20,
+    padding: 18,
     boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
     ...extra,
   };
@@ -136,9 +140,17 @@ const soundButtonStyle = (active) => ({
   color: active ? "white" : "#334155",
 });
 
+const compactBadgeStyle = {
+  background: "#f8fafc",
+  borderRadius: 999,
+  padding: "7px 10px",
+  fontWeight: 800,
+  border: "1px solid #cbd5e1",
+  fontSize: 13,
+};
+
 export default function App() {
   const [started, setStarted] = useState(false);
-  const [nameInput, setNameInput] = useState("");
   const [studentName, setStudentName] = useState("");
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -150,9 +162,11 @@ export default function App() {
   const [badges, setBadges] = useState([]);
   const [soundOn, setSoundOn] = useState(true);
   const [currentLevelIndex, setCurrentLevelIndex] = useState(0);
+  const [showLadder, setShowLadder] = useState(false);
 
   const levelUpAudioRef = useRef(null);
   const badgeAudioRef = useRef(null);
+  const messagesEndRef = useRef(null);
 
   useEffect(() => {
     levelUpAudioRef.current = new Audio("/level-up.mp3");
@@ -161,6 +175,10 @@ export default function App() {
     badgeAudioRef.current = new Audio("/badge.mp3");
     badgeAudioRef.current.preload = "auto";
   }, []);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isLoading]);
 
   const currentLevel = levels[currentLevelIndex];
   const progressWithinLevel = ((xp % 80) / 80) * 100;
@@ -232,7 +250,7 @@ export default function App() {
       /Estás en nivel\s*(\d+)/i,
       /Nivel\s*(\d+)\s*[:.\-]/i,
     ];
-  
+
     for (const pattern of patterns) {
       const match = replyText.match(pattern);
       if (match) {
@@ -242,14 +260,17 @@ export default function App() {
         }
       }
     }
-  
+
     return null;
   };
 
   const evaluateBadges = (text, evalInfo) => {
     const lower = text.toLowerCase();
 
-    if (/(porque|ya que|por eso|debido)/.test(lower) && /(ejemplo|por ejemplo|como cuando|por ejemplo,)/.test(lower)) {
+    if (
+      /(porque|ya que|por eso|debido)/.test(lower) &&
+      /(ejemplo|por ejemplo|como cuando|por ejemplo,)/.test(lower)
+    ) {
       addBadge({
         id: "buen-argumento",
         label: "⚖️ Buen Argumento",
@@ -279,10 +300,24 @@ export default function App() {
     return 0;
   };
 
+  const normalizeName = (text) => {
+    return text
+      .replace(/^me llamo\s+/i, "")
+      .replace(/^soy\s+/i, "")
+      .replace(/^mi nombre es\s+/i, "")
+      .trim();
+  };
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
     const userText = input.trim();
+
+    if (!studentName) {
+      const detectedName = normalizeName(userText);
+      setStudentName(detectedName || userText);
+    }
+
     const evalInfo = inferFeedback(userText);
     const gainedXpBase = rewardXp(evalInfo.score, userText);
 
@@ -299,7 +334,7 @@ export default function App() {
       const reply = await getTutorReply({
         userText,
         conversation: nextConversation,
-        studentName,
+        studentName: studentName || normalizeName(userText) || userText,
         studentLevel: currentLevel.name,
       });
 
@@ -357,6 +392,7 @@ export default function App() {
           background: "linear-gradient(135deg,#dbeafe,#cffafe,#fde68a)",
           padding: 24,
           fontFamily: "sans-serif",
+          boxSizing: "border-box",
         }}
       >
         <div style={{ ...cardStyle({ width: "100%", maxWidth: 460, textAlign: "center" }) }}>
@@ -397,116 +433,111 @@ export default function App() {
   return (
     <div
       style={{
-        minHeight: "100vh",
+        height: "100vh",
+        overflow: "hidden",
         background: "linear-gradient(135deg,#eff6ff,#ecfeff,#fef3c7)",
-        padding: 20,
+        padding: 14,
         fontFamily: "sans-serif",
+        boxSizing: "border-box",
       }}
     >
       <div
         style={{
-          maxWidth: 860,
+          maxWidth: 960,
+          height: "100%",
           margin: "0 auto",
           display: "flex",
           flexDirection: "column",
-          gap: 20,
+          gap: 14,
         }}
       >
-        <div style={{ ...cardStyle(), display: "flex", flexDirection: "column", gap: 16 }}>
+        {/* PANEL SUPERIOR FIJO Y COMPACTO */}
+        <div
+          style={{
+            ...cardStyle({
+              flexShrink: 0,
+              padding: 14,
+            }),
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+          }}
+        >
+          {/* fila superior */}
           <div
             style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
+              display: "grid",
+              gridTemplateColumns: "1.2fr auto 1fr auto",
               gap: 12,
-              flexWrap: "wrap",
+              alignItems: "center",
             }}
           >
-            <div>
-              <div style={{ fontSize: 14, color: "#64748b", fontWeight: 700 }}>Alumno</div>
-              <div style={{ fontSize: 24, fontWeight: 900 }}>{studentName}</div>
-            </div>
-
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 38 }}>{avatarFace(avatarMood)}</div>
-              <div style={{ color: "#64748b", fontWeight: 700 }}>
-                {currentLevel.icon} {currentLevel.name}
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 12, color: "#64748b", fontWeight: 800, textTransform: "uppercase" }}>
+                Alumno
+              </div>
+              <div
+                style={{
+                  fontSize: 22,
+                  fontWeight: 900,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {studentName || "Sin nombre"}
               </div>
             </div>
-          </div>
 
-          <div>
             <div
               style={{
                 display: "flex",
-                justifyContent: "space-between",
-                fontSize: 14,
-                fontWeight: 700,
+                alignItems: "center",
+                gap: 8,
+                background: "#f8fafc",
+                borderRadius: 18,
+                padding: "8px 12px",
+                border: "1px solid #e2e8f0",
               }}
             >
-              <span>Progreso al siguiente nivel</span>
-              <span>{Math.round(progressWithinLevel)}%</span>
+              <div style={{ fontSize: 30, lineHeight: 1 }}>{avatarFace(avatarMood)}</div>
+              <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}>
+                <span style={{ fontSize: 12, color: "#64748b", fontWeight: 800 }}>Nivel</span>
+                <span style={{ fontWeight: 900 }}>
+                  {currentLevel.icon} {currentLevel.n}
+                </span>
+              </div>
             </div>
-            <div
-              style={{
-                marginTop: 8,
-                height: 14,
-                borderRadius: 999,
-                background: "#e2e8f0",
-                overflow: "hidden",
-              }}
-            >
+
+            <div style={{ minWidth: 0 }}>
               <div
                 style={{
-                  width: `${progressWithinLevel}%`,
-                  height: "100%",
-                  background: "linear-gradient(135deg,#2563eb,#06b6d4,#f59e0b)",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  fontSize: 12,
+                  fontWeight: 800,
+                  color: "#475569",
+                  marginBottom: 6,
                 }}
-              />
-            </div>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
-            <div style={{ background: "#fef08a", borderRadius: 16, padding: 14 }}>
-              <div style={{ fontSize: 12, color: "#475569", fontWeight: 700 }}>XP</div>
-              <div style={{ fontWeight: 900, fontSize: 28 }}>{xp}</div>
-            </div>
-            <div style={{ background: "#bfdbfe", borderRadius: 16, padding: 14 }}>
-              <div style={{ fontSize: 12, color: "#475569", fontWeight: 700 }}>Racha</div>
-              <div style={{ fontWeight: 900, fontSize: 28 }}>🔥 {streak}</div>
-            </div>
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: 12,
-              flexWrap: "wrap",
-            }}
-          >
-            <div>
-              <div style={{ fontWeight: 800, marginBottom: 8 }}>Condecoraciones</div>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {badges.length === 0 ? (
-                  <div style={{ color: "#64748b", fontWeight: 700 }}>Aún no tienes condecoraciones</div>
-                ) : (
-                  badges.map((badge) => (
-                    <div
-                      key={badge.id}
-                      style={{
-                        background: "#f8fafc",
-                        borderRadius: 999,
-                        padding: "8px 12px",
-                        fontWeight: 800,
-                        border: "1px solid #cbd5e1",
-                      }}
-                    >
-                      {badge.label} +{badge.bonus}
-                    </div>
-                  ))
-                )}
+              >
+                <span>{currentLevel.name}</span>
+                <span>{Math.round(progressWithinLevel)}%</span>
+              </div>
+              <div
+                style={{
+                  height: 12,
+                  borderRadius: 999,
+                  background: "#e2e8f0",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    width: `${progressWithinLevel}%`,
+                    height: "100%",
+                    background: "linear-gradient(135deg,#2563eb,#06b6d4,#f59e0b)",
+                  }}
+                />
               </div>
             </div>
 
@@ -514,51 +545,225 @@ export default function App() {
               onClick={() => setSoundOn((prev) => !prev)}
               style={soundButtonStyle(soundOn)}
             >
-              {soundOn ? "🔊 Sonido ON" : "🔇 Sonido OFF"}
+              {soundOn ? "🔊" : "🔇"}
             </button>
           </div>
-        </div>
 
-        <div style={{ ...cardStyle(), display: "flex", flexDirection: "column", minHeight: 520 }}>
+          {/* fila stats */}
           <div
             style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: 12,
-              marginBottom: 16,
-              flexWrap: "wrap",
+              display: "grid",
+              gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+              gap: 10,
             }}
           >
-            <div>
-              <div style={{ fontSize: 28, fontWeight: 900 }}>SamurAI</div>
-              <div style={{ color: "#64748b" }}>
-                Responde con profundidad, razones y ejemplos.
+            <div
+              style={{
+                background: "#fef08a",
+                borderRadius: 16,
+                padding: "12px 14px",
+              }}
+            >
+              <div style={{ fontSize: 11, color: "#475569", fontWeight: 800, textTransform: "uppercase" }}>
+                XP
               </div>
+              <div style={{ fontWeight: 900, fontSize: 24 }}>{xp}</div>
             </div>
 
             <div
               style={{
-                fontSize: 12,
-                fontWeight: 800,
-                background: USE_REAL_AI ? "#dcfce7" : "#fee2e2",
-                color: USE_REAL_AI ? "#166534" : "#991b1b",
-                padding: "8px 10px",
-                borderRadius: 999,
+                background: "#bfdbfe",
+                borderRadius: 16,
+                padding: "12px 14px",
               }}
             >
-              {USE_REAL_AI ? "IA REAL ACTIVADA 🔥🔥🔥" : "MODO DEMO ❌"}
+              <div style={{ fontSize: 11, color: "#475569", fontWeight: 800, textTransform: "uppercase" }}>
+                Racha
+              </div>
+              <div style={{ fontWeight: 900, fontSize: 24 }}>🔥 {streak}</div>
+            </div>
+
+            <div
+              style={{
+                background: "#dcfce7",
+                borderRadius: 16,
+                padding: "12px 14px",
+              }}
+            >
+              <div style={{ fontSize: 11, color: "#475569", fontWeight: 800, textTransform: "uppercase" }}>
+                Interacciones
+              </div>
+              <div style={{ fontWeight: 900, fontSize: 24 }}>{userTurns}</div>
+            </div>
+
+            <div
+              style={{
+                background: "#f5d0fe",
+                borderRadius: 16,
+                padding: "12px 14px",
+              }}
+            >
+              <div style={{ fontSize: 11, color: "#475569", fontWeight: 800, textTransform: "uppercase" }}>
+                Estado
+              </div>
+              <div
+                style={{
+                  fontWeight: 900,
+                  fontSize: 13,
+                  lineHeight: 1.2,
+                  marginTop: 4,
+                  color: USE_REAL_AI ? "#166534" : "#991b1b",
+                }}
+              >
+                {USE_REAL_AI ? "IA REAL ACTIVADA" : "MODO DEMO"}
+              </div>
             </div>
           </div>
 
+          {/* fila badges + feedback + botón escalera */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr auto",
+              gap: 12,
+              alignItems: "start",
+            }}
+          >
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontWeight: 800, marginBottom: 6, fontSize: 14 }}>
+                Condecoraciones
+              </div>
+
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {badges.length === 0 ? (
+                  <div style={{ color: "#64748b", fontWeight: 700, fontSize: 13 }}>
+                    Aún no tienes condecoraciones
+                  </div>
+                ) : (
+                  badges.map((badge) => (
+                    <div key={badge.id} style={compactBadgeStyle}>
+                      {badge.label} +{badge.bonus}
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {feedback && (
+                <div
+                  style={{
+                    marginTop: 8,
+                    padding: "10px 12px",
+                    borderRadius: 12,
+                    background: "#f8fafc",
+                    fontWeight: 700,
+                    fontSize: 13,
+                    color: "#334155",
+                  }}
+                >
+                  {feedback}
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={() => setShowLadder((prev) => !prev)}
+              style={{
+                padding: "10px 12px",
+                borderRadius: 12,
+                border: "1px solid #cbd5e1",
+                background: "white",
+                fontWeight: 800,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {showLadder ? "Ocultar escalera" : "Ver escalera"}
+            </button>
+          </div>
+
+          {showLadder && (
+            <div style={{ paddingTop: 4 }}>
+              <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 10 }}>
+                Escalera del pensador
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                  gap: 8,
+                }}
+              >
+                {levels.map((levelItem, idx) => (
+                  <div
+                    key={levelItem.n}
+                    style={{
+                      borderRadius: 14,
+                      padding: "10px 12px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      background:
+                        idx === currentLevelIndex
+                          ? "linear-gradient(135deg,#2563eb,#06b6d4,#f59e0b)"
+                          : "#f1f5f9",
+                      color: idx === currentLevelIndex ? "white" : "#334155",
+                      fontWeight: 700,
+                    }}
+                  >
+                    <span>
+                      {levelItem.icon} {levelItem.name}
+                    </span>
+                    <span>{levelItem.n}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ZONA CHAT */}
+        <div
+          style={{
+            ...cardStyle({
+              flex: 1,
+              minHeight: 0,
+              padding: 16,
+            }),
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          {/* encabezado del chat */}
+          <div
+            style={{
+              flexShrink: 0,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 12,
+              marginBottom: 12,
+              flexWrap: "wrap",
+            }}
+          >
+            <div>
+              <div style={{ fontSize: 26, fontWeight: 900 }}>SamurAI</div>
+              <div style={{ color: "#64748b", fontSize: 14 }}>
+                Responde con profundidad, razones y ejemplos.
+              </div>
+            </div>
+          </div>
+
+          {/* mensajes con scroll */}
           <div
             style={{
               flex: 1,
-              overflow: "auto",
+              minHeight: 0,
+              overflowY: "auto",
               display: "flex",
               flexDirection: "column",
               gap: 12,
               paddingRight: 4,
+              scrollBehavior: "smooth",
             }}
           >
             {messages.map((m, i) => (
@@ -581,6 +786,7 @@ export default function App() {
                       m.role === "user"
                         ? "linear-gradient(135deg,#2563eb,#0f172a)"
                         : "#f1f5f9",
+                    wordBreak: "break-word",
                   }}
                 >
                   {m.text}
@@ -588,12 +794,20 @@ export default function App() {
               </div>
             ))}
 
-            {isLoading && <div style={{ color: "#64748b" }}>SamurAI está pensando...</div>}
+            {isLoading && (
+              <div style={{ color: "#64748b", fontWeight: 700 }}>
+                SamurAI está pensando...
+              </div>
+            )}
+
+            <div ref={messagesEndRef} />
           </div>
 
+          {/* input fijo abajo */}
           <div
             style={{
-              marginTop: 16,
+              flexShrink: 0,
+              marginTop: 12,
               borderRadius: 20,
               border: "2px solid #bfdbfe",
               padding: 12,
@@ -624,6 +838,7 @@ export default function App() {
                   borderRadius: 14,
                   border: "1px solid #cbd5e1",
                   fontSize: 15,
+                  outline: "none",
                 }}
               />
 
