@@ -515,7 +515,7 @@ export default function App() {
           boxSizing: "border-box",
         }}
       >
-        <div style={{ ...cardStyle({ width: "100%", maxWidth: 460, textAlign: "center" }) }}>
+        <div style={{ ...cardStyle({ width: "100%", textAlign: "center" }) }}>
           <div style={{ fontSize: 64, marginBottom: 10 }}>🥷</div>
           <h1 style={{ margin: 0, fontSize: 28, lineHeight: 1.15 }}>
             SamurAI del pensamiento
@@ -562,15 +562,13 @@ export default function App() {
       }}
     >
       <div
-        style={{
-          maxWidth: 960,
-          height: "100%",
-          margin: "0 auto",
-          display: "flex",
-          flexDirection: "column",
-          gap: 14,
-        }}
-      >
+  style={{
+    width: "100%",
+    minHeight: "100vh",
+    padding: "20px 40px",
+    boxSizing: "border-box",
+  }}
+>
         <div
           style={{
             ...cardStyle({
@@ -939,7 +937,7 @@ export default function App() {
                 >
                   <div
                     style={{
-                      maxWidth: "82%",
+                      maxWidth: "100%",
                       borderRadius: isUser ? "22px 22px 8px 22px" : "22px 22px 22px 8px",
                       padding: "14px 16px",
                       lineHeight: 1.55,
