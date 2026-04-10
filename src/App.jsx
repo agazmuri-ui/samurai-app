@@ -1015,69 +1015,83 @@ export default function App() {
               ✍️ Responde con tus propias palabras. No se permite copiar ni pegar.
             </div>
 
-            <div style={{ display: "flex", gap: 10 }}>
-              <input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  const key = e.key.toLowerCase();
-                  const usingCommand = e.ctrlKey || e.metaKey;
+            <div
+  style={{
+    display: "grid",
+    gridTemplateColumns: "1fr auto",
+    gap: 10,
+    alignItems: "end",
+  }}
+>
+  <textarea
+    value={input}
+    onChange={(e) => setInput(e.target.value)}
+    onKeyDown={(e) => {
+      const key = e.key.toLowerCase();
+      const usingCommand = e.ctrlKey || e.metaKey;
 
-                  if (usingCommand && (key === "v" || key === "c" || key === "x")) {
-                    e.preventDefault();
-                    setFeedback("⚠️ No se permite copiar ni pegar. Escribe con tus propias palabras.");
-                    return;
-                  }
+      if (usingCommand && (key === "v" || key === "c" || key === "x")) {
+        e.preventDefault();
+        setFeedback("⚠️ No se permite copiar ni pegar. Escribe con tus propias palabras.");
+        return;
+      }
 
-                  if (e.key === "Enter") {
-                    handleSend();
-                  }
-                }}
-                onPaste={(e) => {
-                  e.preventDefault();
-                  setFeedback("⚠️ No se permite pegar texto. Escribe con tus propias palabras.");
-                }}
-                onCopy={(e) => {
-                  e.preventDefault();
-                  setFeedback("⚠️ No se permite copiar desde este espacio.");
-                }}
-                onCut={(e) => {
-                  e.preventDefault();
-                  setFeedback("⚠️ No se permite cortar texto desde este espacio.");
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setFeedback("⚠️ No se permite arrastrar texto aquí.");
-                }}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                }}
-                placeholder="Escribe una respuesta ..."
-                style={{
-                  flex: 1,
-                  padding: 14,
-                  borderRadius: 14,
-                  border: "1px solid #cbd5e1",
-                  fontSize: 15,
-                }}
-              />
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    }}
+    onPaste={(e) => {
+      e.preventDefault();
+      setFeedback("⚠️ No se permite pegar texto. Escribe con tus propias palabras.");
+    }}
+    onCopy={(e) => {
+      e.preventDefault();
+      setFeedback("⚠️ No se permite copiar desde este espacio.");
+    }}
+    onCut={(e) => {
+      e.preventDefault();
+      setFeedback("⚠️ No se permite cortar texto desde este espacio.");
+    }}
+    onDrop={(e) => {
+      e.preventDefault();
+      setFeedback("⚠️ No se permite arrastrar texto aquí.");
+    }}
+    onContextMenu={(e) => {
+      e.preventDefault();
+    }}
+    placeholder="Escribe una respuesta con razones, ejemplo y profundidad..."
+    rows={4}
+    style={{
+      width: "100%",
+      resize: "none",
+      padding: 14,
+      borderRadius: 14,
+      border: "1px solid #cbd5e1",
+      fontSize: 15,
+      lineHeight: 1.5,
+      fontFamily: "inherit",
+      boxSizing: "border-box",
+    }}
+  />
 
-              <button
-                onClick={handleSend}
-                disabled={isLoading}
-                style={{
-                  padding: "0 18px",
-                  borderRadius: 14,
-                  border: 0,
-                  color: "white",
-                  fontWeight: 800,
-                  background: "linear-gradient(135deg,#2563eb,#06b6d4,#f59e0b)",
-                  cursor: "pointer",
-                }}
-              >
-                Enviar
-              </button>
-            </div>
+  <button
+    onClick={handleSend}
+    disabled={isLoading}
+    style={{
+      minHeight: 56,
+      padding: "0 18px",
+      borderRadius: 14,
+      border: 0,
+      color: "white",
+      fontWeight: 800,
+      background: "linear-gradient(135deg,#2563eb,#06b6d4,#f59e0b)",
+      cursor: "pointer",
+    }}
+  >
+    Enviar
+  </button>
+</div>
           </div>
         </div>
       </div>
