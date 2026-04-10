@@ -1012,7 +1012,6 @@ export default function App() {
                 fontWeight: 700,
               }}
             >
-              ✍️ Responde con tus propias palabras. No se permite copiar ni pegar.
             </div>
 
             <div
@@ -1032,7 +1031,7 @@ export default function App() {
 
       if (usingCommand && (key === "v" || key === "c" || key === "x")) {
         e.preventDefault();
-        setFeedback("⚠️ No se permite copiar ni pegar. Escribe con tus propias palabras.");
+        setFeedback("");
         return;
       }
 
