@@ -15,16 +15,16 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 const USE_REAL_AI = true;
 
 const levels = [
-  { n: 1, name: "Novato", icon: "👶" },
-  { n: 2, name: "Repetidor", icon: "🗣️" },
-  { n: 3, name: "Intuitivo", icon: "💡" },
-  { n: 4, name: "Explorador", icon: "🔍" },
-  { n: 5, name: "Constructor", icon: "🧱" },
-  { n: 6, name: "Presidente Argumentador", icon: "⚖️" },
-  { n: 7, name: "Rey Crítico", icon: "🎯" },
-  { n: 8, name: "Rey Filósofo", icon: "🧠" },
-  { n: 9, name: "GOAT del Pensamiento", icon: "⚔️" },
-  { n: 10, name: "Samurai del Pensamiento", icon: "👑" },
+  { n: 1, name: "Novato", icon: "👶", avatar: "/avatars/level1.png" },
+  { n: 2, name: "Repetidor", icon: "🗣️", avatar: "/avatars/level2.png" },
+  { n: 3, name: "Intuitivo", icon: "💡", avatar: "/avatars/level3.png" },
+  { n: 4, name: "Explorador", icon: "🔍", avatar: "/avatars/level4.png" },
+  { n: 5, name: "Constructor", icon: "🧱", avatar: "/avatars/level5.png" },
+  { n: 6, name: "Presidente", icon: "⚖️", avatar: "/avatars/level6.png" },
+  { n: 7, name: "Rey Crítico", icon: "🎯", avatar: "/avatars/level7.png" },
+  { n: 8, name: "Rey Filósofo", icon: "🧠", avatar: "/avatars/level8.png" },
+  { n: 9, name: "GOAT del Pensamiento", icon: "⚔️", avatar: "/avatars/level9.png" },
+  { n: 10, name: "Samurai del Pensamiento", icon: "👑", avatar: "/avatars/level10.png" },
 ];
 
 const starterMessages = () => [
@@ -490,24 +490,49 @@ export default function App() {
             </div>
 
             <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                background: "#f8fafc",
-                borderRadius: 18,
-                padding: "8px 12px",
-                border: "1px solid #e2e8f0",
-              }}
-            >
-              <div style={{ fontSize: 30, lineHeight: 1 }}>{avatarFace(avatarMood)}</div>
-              <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}>
-                <span style={{ fontSize: 12, color: "#64748b", fontWeight: 800 }}>Nivel</span>
-                <span style={{ fontWeight: 900 }}>
-                  {currentLevel.icon} {currentLevel.n}
-                </span>
-              </div>
-            </div>
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    background: "#f8fafc",
+    borderRadius: 18,
+    padding: "8px 12px",
+    border: "1px solid #e2e8f0",
+  }}
+>
+  <div
+    style={{
+      width: 54,
+      height: 54,
+      borderRadius: 14,
+      overflow: "hidden",
+      flexShrink: 0,
+      background: "#e2e8f0",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}
+  >
+    <img
+      src={currentLevel.avatar}
+      alt={`Avatar nivel ${currentLevel.n}`}
+      style={{
+        width: "100%",
+        height: "100%",
+        objectFit: "cover",
+      }}
+    />
+  </div>
+
+  <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}>
+    <span style={{ fontSize: 12, color: "#64748b", fontWeight: 800 }}>
+      Nivel
+    </span>
+    <span style={{ fontWeight: 900 }}>
+      {currentLevel.n}
+    </span>
+  </div>
+</div>
 
             <div style={{ minWidth: 0 }}>
               <div
