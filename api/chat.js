@@ -78,7 +78,7 @@ export default async function handler(req, res) {
   try {
     const authHeader = req.headers.authorization || "";
     const idToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
-    const authenticatedUser = await verifyGoogleIdToken(idToken);
+    const { user: authenticatedUser } = await verifyGoogleIdToken(idToken);
 
     if (!authenticatedUser) {
       return res.status(401).json({ error: "No autorizado. Inicia sesión con Google." });

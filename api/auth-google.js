@@ -13,9 +13,11 @@ export default async function handler(req, res) {
     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
     const idToken = body?.idToken;
 
-    const user = await verifyGoogleIdToken(idToken);
+    const { user, reason } = await verifyGoogleIdToken(idToken);
     if (!user) {
-      return res.status(401).json({ error: "Credenciales de Google inválidas." });
+      return res
+        .status(401)
+        .json({ error: "Credenciales de Google inválidas.", reason: reason || "unknown" });
     }
 
     return res.status(200).json({ user });

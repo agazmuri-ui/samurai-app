@@ -296,6 +296,9 @@ function AppContent() {
   const [showLadder, setShowLadder] = useState(false);
   const [googleAuth, setGoogleAuth] = useState(null);
   const [authError, setAuthError] = useState("");
+  const [isMobileLayout, setIsMobileLayout] = useState(
+    typeof window !== "undefined" ? window.innerWidth < 900 : false
+  );
 
   const levelUpAudioRef = useRef(null);
   const badgeAudioRef = useRef(null);
@@ -321,6 +324,16 @@ function AppContent() {
     } catch {
       window.localStorage.removeItem(AUTH_STORAGE_KEY);
     }
+  }, []);
+
+  useEffect(() => {
+    const onResize = () => {
+      setIsMobileLayout(window.innerWidth < 900);
+    };
+
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
   useEffect(() => {
@@ -448,15 +461,28 @@ function AppContent() {
       });
 
       if (!response.ok) {
-        throw new Error("Credenciales inválidas.");
+        const rawBody = await response.text();
+        let parsedBody = {};
+        try {
+          parsedBody = rawBody ? JSON.parse(rawBody) : {};
+        } catch {
+          parsedBody = {};
+        }
+
+        const reason = parsedBody?.reason ? ` (${parsedBody.reason})` : "";
+        const details = rawBody && !parsedBody?.reason ? ` body: ${rawBody}` : "";
+        throw new Error(`Credenciales inválidas${reason}. status: ${response.status}.${details}`);
       }
 
       const data = await response.json();
       const authState = { idToken, user: data.user };
       setGoogleAuth(authState);
       window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authState));
-    } catch {
-      setAuthError("No pudimos validar tu cuenta de Google. Intenta nuevamente.");
+    } catch (error) {
+      const message = error?.message || "";
+      setAuthError(
+        `No pudimos validar tu cuenta de Google. Intenta nuevamente.${message ? ` ${message}` : ""}`
+      );
     }
   };
 
@@ -795,33 +821,33 @@ function AppContent() {
         <div
           style={{
             ...cardStyle({
-              flex: "0 0 33vh",
-              height: "33vh",
-              maxHeight: "33vh",
+              flex: isMobileLayout ? "0 0 auto" : "0 0 33vh",
+              height: isMobileLayout ? "auto" : "33vh",
+              maxHeight: isMobileLayout ? "none" : "33vh",
               minHeight: 0,
-              padding: 12,
+              padding: isMobileLayout ? 8 : 12,
               flexShrink: 0,
             }),
             display: "flex",
             flexDirection: "column",
-            gap: 10,
+            gap: isMobileLayout ? 6 : 10,
             overflowX: "hidden",
-            overflowY: "auto",
+            overflowY: isMobileLayout ? "visible" : "auto",
             WebkitOverflowScrolling: "touch",
           }}
         >
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1.2fr auto 1fr auto",
-              gap: 12,
+              gridTemplateColumns: isMobileLayout ? "1fr auto auto" : "1.2fr auto 1fr auto",
+              gap: isMobileLayout ? 6 : 12,
               alignItems: "center",
             }}
           >
             <div style={{ minWidth: 0 }}>
               <div
                 style={{
-                  fontSize: 12,
+                  fontSize: isMobileLayout ? 11 : 12,
                   color: "#64748b",
                   fontWeight: 800,
                   textTransform: "uppercase",
@@ -831,7 +857,7 @@ function AppContent() {
               </div>
               <div
                 style={{
-                  fontSize: 22,
+                  fontSize: isMobileLayout ? 16 : 22,
                   fontWeight: 900,
                   whiteSpace: "nowrap",
                   overflow: "hidden",
@@ -846,18 +872,18 @@ function AppContent() {
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 8,
+                  gap: isMobileLayout ? 4 : 8,
                 background: "#f8fafc",
-                borderRadius: 18,
-                padding: "8px 12px",
+                  borderRadius: isMobileLayout ? 12 : 18,
+                  padding: isMobileLayout ? "4px 6px" : "8px 12px",
                 border: "1px solid #e2e8f0",
               }}
             >
               <div
                 style={{
-                  width: 110,
-                  height: 110,
-                  borderRadius: 18,
+                  width: isMobileLayout ? 48 : 110,
+                  height: isMobileLayout ? 48 : 110,
+                  borderRadius: isMobileLayout ? 10 : 18,
                   overflow: "hidden",
                   flexShrink: 0,
                   display: "flex",
@@ -878,14 +904,16 @@ function AppContent() {
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}>
-                <span style={{ fontSize: 12, color: "#64748b", fontWeight: 800 }}>
+                <span style={{ fontSize: isMobileLayout ? 11 : 12, color: "#64748b", fontWeight: 800 }}>
                   Nivel
                 </span>
-                <span style={{ fontWeight: 900, fontSize: 20 }}>{currentLevel.n}</span>
+                <span style={{ fontWeight: 900, fontSize: isMobileLayout ? 15 : 20 }}>
+                  {currentLevel.n}
+                </span>
               </div>
             </div>
 
-            <div style={{ minWidth: 0 }}>
+            {!isMobileLayout && <div style={{ minWidth: 0 }}>
               <div
                 style={{
                   display: "flex",
@@ -893,7 +921,7 @@ function AppContent() {
                   fontSize: 12,
                   fontWeight: 800,
                   color: "#475569",
-                  marginBottom: 6,
+                  marginBottom: 4,
                 }}
               >
                 <span>{currentLevel.name}</span>
@@ -929,57 +957,135 @@ function AppContent() {
                   ? "Nivel recién alcanzado"
                   : `Te faltan ${80 - (xp % 80)} XP para el siguiente nivel`}
               </div>
-            </div>
+            </div>}
 
-            <button
-              onClick={() => setSoundOn((prev) => !prev)}
-              style={soundButtonStyle(soundOn)}
-            >
-              {soundOn ? "🔊" : "🔇"}
-            </button>
-            <button onClick={handleLogout} style={soundButtonStyle(false)}>
-              Salir
-            </button>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={() => setSoundOn((prev) => !prev)}
+                style={soundButtonStyle(soundOn)}
+                title={soundOn ? "Silenciar" : "Activar sonido"}
+              >
+                {soundOn ? "🔊" : "🔇"}
+              </button>
+              <button onClick={handleLogout} style={soundButtonStyle(false)}>
+                {isMobileLayout ? "Salir" : "Salir"}
+              </button>
+            </div>
           </div>
+
+          {isMobileLayout && (
+            <div style={{ minWidth: 0 }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  fontSize: 12,
+                  fontWeight: 800,
+                  color: "#475569",
+                  marginBottom: 6,
+                }}
+              >
+                <span>{currentLevel.name}</span>
+                <span>{Math.round(progressWithinLevel)}%</span>
+              </div>
+              <div
+                style={{
+                  height: 8,
+                  borderRadius: 999,
+                  background: "#e2e8f0",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    width: `${progressWithinLevel}%`,
+                    height: "100%",
+                    background: uiTheme.progressFill,
+                    transition: "width 0.4s ease",
+                    borderRadius: 999,
+                  }}
+                />
+              </div>
+            </div>
+          )}
 
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-              gap: 10,
+              gridTemplateColumns: isMobileLayout ? "1fr" : "repeat(4, minmax(0, 1fr))",
+              gap: isMobileLayout ? 8 : 10,
             }}
           >
-            <div
-              style={{
-                background: "linear-gradient(180deg,#fef9c3,#fef08a)",
-                borderRadius: 18,
-                padding: "12px 14px",
-                border: "2px solid #facc15",
-                boxShadow: "0 3px 0 #ca8a04",
-              }}
-            >
-              <div style={{ fontSize: 11, color: "#713f12", fontWeight: 900, textTransform: "uppercase" }}>
-                XP
+            {isMobileLayout ? (
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <div
+                  style={{
+                    background: "#fef3c7",
+                    borderRadius: 999,
+                    padding: "6px 10px",
+                    border: "1px solid #facc15",
+                    fontWeight: 900,
+                    color: "#713f12",
+                    fontSize: 13,
+                    lineHeight: 1.2,
+                  }}
+                >
+                  ⭐ XP: {xp}
+                </div>
+                <div
+                  style={{
+                    background: "#dbeafe",
+                    borderRadius: 999,
+                    padding: "6px 10px",
+                    border: "1px solid #60a5fa",
+                    fontWeight: 900,
+                    color: "#1e3a8a",
+                    fontSize: 13,
+                    lineHeight: 1.2,
+                  }}
+                >
+                  🔥 Racha: {streak}
+                </div>
               </div>
-              <div style={{ fontWeight: 900, fontSize: 26, color: "#422006" }}>{xp}</div>
-            </div>
+            ) : (
+              <>
+                <div
+                  style={{
+                    background: "linear-gradient(180deg,#fef9c3,#fef08a)",
+                    borderRadius: 18,
+                    padding: "12px 14px",
+                    border: "2px solid #facc15",
+                    boxShadow: "0 3px 0 #ca8a04",
+                  }}
+                >
+                  <div
+                    style={{ fontSize: 11, color: "#713f12", fontWeight: 900, textTransform: "uppercase" }}
+                  >
+                    XP
+                  </div>
+                  <div style={{ fontWeight: 900, fontSize: 26, color: "#422006" }}>{xp}</div>
+                </div>
 
-            <div
-              style={{
-                background: "linear-gradient(180deg,#dbeafe,#93c5fd)",
-                borderRadius: 18,
-                padding: "12px 14px",
-                border: "2px solid #60a5fa",
-                boxShadow: "0 3px 0 #2563eb",
-              }}
-            >
-              <div style={{ fontSize: 11, color: "#1e3a8a", fontWeight: 900, textTransform: "uppercase" }}>
-                Racha
-              </div>
-              <div style={{ fontWeight: 900, fontSize: 26, color: "#172554" }}>🔥 {streak}</div>
-            </div>
+                <div
+                  style={{
+                    background: "linear-gradient(180deg,#dbeafe,#93c5fd)",
+                    borderRadius: 18,
+                    padding: "12px 14px",
+                    border: "2px solid #60a5fa",
+                    boxShadow: "0 3px 0 #2563eb",
+                  }}
+                >
+                  <div
+                    style={{ fontSize: 11, color: "#1e3a8a", fontWeight: 900, textTransform: "uppercase" }}
+                  >
+                    Racha
+                  </div>
+                  <div style={{ fontWeight: 900, fontSize: 26, color: "#172554" }}>🔥 {streak}</div>
+                </div>
+              </>
+            )}
 
-            <div
+            {!isMobileLayout && <div
               style={{
                 background: "linear-gradient(180deg,#dcfce7,#86efac)",
                 borderRadius: 18,
@@ -992,9 +1098,9 @@ function AppContent() {
                 Interacciones
               </div>
               <div style={{ fontWeight: 900, fontSize: 26, color: "#052e16" }}>{userTurns}</div>
-            </div>
+            </div>}
 
-            <div
+            {!isMobileLayout && <div
               style={{
                 background: "linear-gradient(180deg,#fae8ff,#e879f9)",
                 borderRadius: 18,
@@ -1017,13 +1123,13 @@ function AppContent() {
               >
                 {USE_REAL_AI ? "IA REAL ACTIVADA" : "MODO DEMO"}
               </div>
-            </div>
+            </div>}
           </div>
 
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr auto",
+              gridTemplateColumns: isMobileLayout ? "1fr" : "1fr auto",
               gap: 12,
               alignItems: "start",
             }}
@@ -1033,19 +1139,33 @@ function AppContent() {
                 Condecoraciones
               </div>
 
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {badges.length === 0 ? (
-                  <div style={{ color: "#64748b", fontWeight: 700, fontSize: 13 }}>
-                    Aún no tienes condecoraciones
-                  </div>
-                ) : (
-                  badges.map((badge) => (
-                    <div key={badge.id} style={compactBadgeStyle}>
-                      {badge.label} +{badge.bonus}
+              {isMobileLayout ? (
+                <div
+                  style={{
+                    ...compactBadgeStyle,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    fontSize: 13,
+                  }}
+                >
+                  🏅 {badges.length} {badges.length === 1 ? "condecoración" : "condecoraciones"}
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {badges.length === 0 ? (
+                    <div style={{ color: "#64748b", fontWeight: 700, fontSize: 13 }}>
+                      Aún no tienes condecoraciones
                     </div>
-                  ))
-                )}
-              </div>
+                  ) : (
+                    badges.map((badge) => (
+                      <div key={badge.id} style={compactBadgeStyle}>
+                        {badge.label} +{badge.bonus}
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
 
               {feedback && (
                 <div
@@ -1082,6 +1202,7 @@ function AppContent() {
                 cursor: "pointer",
                 whiteSpace: "nowrap",
                 boxShadow: "0 3px 0 #86efac",
+                justifySelf: isMobileLayout ? "start" : "end",
               }}
             >
               {showLadder ? "Ocultar escalera" : "Ver escalera"}
