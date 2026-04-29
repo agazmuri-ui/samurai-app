@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
 
 /**
  * App basada en tu versión real, pero:
@@ -18,6 +19,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 const USE_REAL_AI = true;
 const SAVE_COOKIE_NAME = "samurai_progress_v1";
 const SAVE_COOKIE_DAYS = 45;
+const AUTH_STORAGE_KEY = "samurai_google_auth_v1";
 
 /** Tipografía y colores tipo “app de práctica” (alegre, alto contraste, gamificado). */
 const FONT_UI = "'Nunito', system-ui, 'Segoe UI', sans-serif";
@@ -58,6 +60,24 @@ Para partir, dime: ¿Cómo te llamas?`,
 function setCookie(name, value, days = 30) {
   const expires = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toUTCString();
   document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+}
+
+export default function App() {
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+  if (!clientId) {
+    return (
+      <div style={{ padding: 24, fontFamily: FONT_UI }}>
+        Falta configurar <b>VITE_GOOGLE_CLIENT_ID</b> en variables de entorno.
+      </div>
+    );
+  }
+
+  return (
+    <GoogleOAuthProvider clientId={clientId}>
+      <AppContent />
+    </GoogleOAuthProvider>
+  );
 }
 
 function getCookie(name) {
@@ -121,14 +141,17 @@ Evaluación rápida:
 Siguiente paso: reformula tu idea con un “porque...” y un ejemplo.`;
 }
 
-async function getTutorReply({ userText, conversation, studentName, studentLevel }) {
+async function getTutorReply({ userText, conversation, studentName, studentLevel, idToken }) {
   if (!USE_REAL_AI) {
     return demoTutorReply(userText);
   }
 
   const response = await fetch("/api/chat", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${idToken}`,
+    },
     body: JSON.stringify({
       userText,
       mode: "chat",
@@ -139,6 +162,9 @@ async function getTutorReply({ userText, conversation, studentName, studentLevel
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error("SESSION_EXPIRED");
+    }
     throw new Error("No se pudo obtener respuesta de la IA.");
   }
 
@@ -254,7 +280,7 @@ function getLadderCardStyle(idx, currentLevelIndex) {
   };
 }
 
-export default function App() {
+function AppContent() {
   const [started, setStarted] = useState(false);
   const [studentName, setStudentName] = useState("");
   const [messages, setMessages] = useState([]);
@@ -268,6 +294,8 @@ export default function App() {
   const [soundOn, setSoundOn] = useState(true);
   const [currentLevelIndex, setCurrentLevelIndex] = useState(0);
   const [showLadder, setShowLadder] = useState(false);
+  const [googleAuth, setGoogleAuth] = useState(null);
+  const [authError, setAuthError] = useState("");
 
   const levelUpAudioRef = useRef(null);
   const badgeAudioRef = useRef(null);
@@ -279,6 +307,20 @@ export default function App() {
 
     badgeAudioRef.current = new Audio("/badge.mp3");
     badgeAudioRef.current.preload = "auto";
+  }, []);
+
+  useEffect(() => {
+    const savedAuth = window.localStorage.getItem(AUTH_STORAGE_KEY);
+    if (!savedAuth) return;
+
+    try {
+      const parsed = JSON.parse(savedAuth);
+      if (parsed?.idToken && parsed?.user?.email) {
+        setGoogleAuth(parsed);
+      }
+    } catch {
+      window.localStorage.removeItem(AUTH_STORAGE_KEY);
+    }
   }, []);
 
   useEffect(() => {
@@ -341,6 +383,11 @@ export default function App() {
     messages,
   ]);
 
+  useEffect(() => {
+    if (studentName || !googleAuth?.user?.name) return;
+    setStudentName(googleAuth.user.name);
+  }, [googleAuth, studentName]);
+
   const currentLevel = levels[currentLevelIndex];
   const progressWithinLevel = ((xp % 80) / 80) * 100;
   const userTurns = useMemo(() => messages.filter((m) => m.role === "user").length, [messages]);
@@ -384,6 +431,42 @@ export default function App() {
     });
   };
 
+  const handleGoogleLoginSuccess = async (credentialResponse) => {
+    const idToken = credentialResponse?.credential;
+    if (!idToken) {
+      setAuthError("No se pudo completar el login con Google.");
+      return;
+    }
+
+    setAuthError("");
+
+    try {
+      const response = await fetch("/api/auth-google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Credenciales inválidas.");
+      }
+
+      const data = await response.json();
+      const authState = { idToken, user: data.user };
+      setGoogleAuth(authState);
+      window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authState));
+    } catch {
+      setAuthError("No pudimos validar tu cuenta de Google. Intenta nuevamente.");
+    }
+  };
+
+  const handleLogout = () => {
+    setGoogleAuth(null);
+    setStarted(false);
+    setAuthError("");
+    window.localStorage.removeItem(AUTH_STORAGE_KEY);
+  };
+
   const startApp = () => {
     setStarted(true);
     if (!messages.length) {
@@ -406,7 +489,7 @@ export default function App() {
       /Nivel inicial del alumno:\s*(\d+)/i,
       /Nivel inicial:\s*(\d+)/i,
       /Estás en nivel\s*(\d+)/i,
-      /Nivel\s*(\d+)\s*[:.\-]/i,
+      /Nivel\s*(\d+)\s*[:.-]/i,
     ];
 
     for (const pattern of patterns) {
@@ -494,6 +577,7 @@ export default function App() {
         conversation: nextConversation,
         studentName: studentName || normalizeName(userText) || userText,
         studentLevel: currentLevel.name,
+        idToken: googleAuth.idToken,
       });
 
       const detectedLevelIndex = extractLevelFromReply(reply);
@@ -526,6 +610,11 @@ export default function App() {
       }
     } catch (error) {
       console.error(error);
+      if (error?.message === "SESSION_EXPIRED") {
+        handleLogout();
+        setAuthError("Tu sesión expiró. Vuelve a iniciar con Google.");
+        return;
+      }
       setMessages((prev) => [
         ...prev,
         {
@@ -538,6 +627,55 @@ export default function App() {
       setIsLoading(false);
     }
   };
+
+  if (!googleAuth) {
+    return (
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: uiTheme.splashBg,
+          padding: 24,
+          fontFamily: FONT_UI,
+          boxSizing: "border-box",
+          overflow: "auto",
+        }}
+      >
+        <div
+          style={{
+            ...cardStyle({ width: "100%", maxWidth: 440, textAlign: "center", padding: 28 }),
+          }}
+        >
+          <div style={{ fontSize: 68, marginBottom: 8, lineHeight: 1 }}>🔐</div>
+          <h1 style={{ margin: 0, fontSize: 28, lineHeight: 1.15, fontWeight: 900, color: "#0f172a" }}>
+            Acceso con Google
+          </h1>
+          <p style={{ color: "#475569", fontSize: 15, marginTop: 10, lineHeight: 1.5, fontWeight: 700 }}>
+            Para entrar a SamurAI del pensamiento debes iniciar sesión con tu cuenta de Google.
+          </p>
+          <div style={{ marginTop: 18, display: "flex", justifyContent: "center" }}>
+            <GoogleLogin
+              onSuccess={handleGoogleLoginSuccess}
+              onError={() => setAuthError("Error al iniciar sesión con Google.")}
+              theme="filled_blue"
+              shape="pill"
+              size="large"
+              text="signin_with"
+            />
+          </div>
+          {authError ? (
+            <div style={{ marginTop: 12, color: "#b91c1c", fontWeight: 800, fontSize: 13 }}>
+              {authError}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
 
   if (!started) {
     return (
@@ -595,6 +733,9 @@ export default function App() {
             Entrena tu mente, suma XP y sube en la Escalera del Pensador — como un juego, pero
             pensando en serio.
           </p>
+          <div style={{ marginTop: 10, fontSize: 13, color: "#334155", fontWeight: 800 }}>
+            Sesión activa: {googleAuth.user.name || googleAuth.user.email}
+          </div>
 
           <button
             type="button"
@@ -606,6 +747,17 @@ export default function App() {
             }}
           >
             ¡Vamos! 🚀
+          </button>
+          <button
+            type="button"
+            onClick={handleLogout}
+            style={{
+              ...soundButtonStyle(false),
+              marginTop: 10,
+              width: "100%",
+            }}
+          >
+            Cerrar sesión
           </button>
 
           <div
@@ -784,6 +936,9 @@ export default function App() {
               style={soundButtonStyle(soundOn)}
             >
               {soundOn ? "🔊" : "🔇"}
+            </button>
+            <button onClick={handleLogout} style={soundButtonStyle(false)}>
+              Salir
             </button>
           </div>
 

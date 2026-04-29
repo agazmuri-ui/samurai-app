@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { verifyGoogleIdToken } from "./google-auth.js";
 
 export const config = {
   runtime: "nodejs",
@@ -75,7 +76,15 @@ export default async function handler(req, res) {
   }
 
   try {
-    const apiKey = process.env.OPENAI_API_KEY;
+    const authHeader = req.headers.authorization || "";
+    const idToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+    const authenticatedUser = await verifyGoogleIdToken(idToken);
+
+    if (!authenticatedUser) {
+      return res.status(401).json({ error: "No autorizado. Inicia sesión con Google." });
+    }
+
+    const apiKey = globalThis?.process?.env?.OPENAI_API_KEY;
 
     if (!apiKey) {
       return res.status(500).json({ error: "Falta OPENAI_API_KEY en Vercel" });
@@ -93,7 +102,6 @@ export default async function handler(req, res) {
     } = body || {};
 
     const trimmedUserText = userText.trim();
-    const normalizedUserText = normalizeOption(trimmedUserText);
     const optionLetter = extractOptionLetter(trimmedUserText);
 
     const assistantMessages = conversation.filter((m) => m.role === "assistant");
